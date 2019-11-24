@@ -12,12 +12,21 @@
 #define RIGHT 3
 #define SUBMIT 4 // 선택(스페이스바)
 
-
+#define WALL '1'
+#define DOORWALL '#'
 #define PLAYER '2'
 #define WATER '3'
 #define FOOD '4'
+#define DOOR '*'
 
-// color seting
+#define EAST 0
+#define WAST 1
+#define SOUTH 2
+#define NORTH 3
+
+#define MAPSIZE 10
+
+// setting
 enum {
 	black,
 	blue,
@@ -36,10 +45,10 @@ enum {
 	yellow,
 	white
 };
-char maps[10][32][32];
-char initmap[32][32] = {
+char maps[MAPSIZE][32][32];
+char defaultmap[32][32] = {
 	// 0: 빈공간, 1: 벽, *; 문, #: 벽(문o), @: 벽(문x), +:표시선
-	// 게임 내 공간 [2][2]~[29][29]
+	// 게임 내 공간 [2][2]~[29][29], 정중앙 [15][15]
 	{"0000000000000#***#0000000000000"},
 	{"0111111111111#@@@#1111111111110"},
 	{"0100000000000000000000000000010"},
@@ -73,37 +82,64 @@ char initmap[32][32] = {
 	{"0111111111111#@@@#1111111111110"},
 	{"0000000000000#***#0000000000000"},
 };
-short pX;
-short pY;
+int infomap[MAPSIZE][6] = { 0 };
+
+int pX=0;
+int pY=0;
 
 // funcions list
 void init();
-void gotoxy(short, short);
-void setColor(short, short);
+void gotoxy(int, int);
+void setColor(int, int);
 void titleDraw();
-short menuDraw();
-short keyControl();
+int menuDraw();
+int keyControl();
 void infoDraw();
 void randomObjectMaking(char, char *);
-void creatmap(short);
-void drawMap(short);
+void creatmap();
+void drawMap(int);
+int mobile(char);
+int move(int, int, int, int);
 
 // main function
 int main()
 {
+	srand(time(NULL));
 	int menuCode = -1;
 	init();
 	while (1)
 	{
 		titleDraw();
 		menuCode = menuDraw();
-
 		if (menuCode == 0)
 		{
-			creatmap(0);
+			creatmap();
 			Sleep(500);
 			drawMap(0);
-			_getch();
+			int mKey;
+			int playing = 1;
+			int mappos = 0;
+			while (playing)
+			{
+				mKey = keyControl();
+				switch (mKey)
+				{
+				case UP:
+					mappos = move(PLAYER, mappos, 0, -1);
+					break;
+				case DOWN:
+					mappos = move(PLAYER, mappos, 0, 1);
+					break;
+				case RIGHT:
+					mappos = move(PLAYER, mappos, 1, 0);
+					break;
+				case LEFT:
+					mappos = move(PLAYER, mappos, -1, 0);
+					break;
+				case SUBMIT:
+					playing = 0;
+				}
+			}
 		}
 		else if (menuCode == 1)
 		{
@@ -131,7 +167,7 @@ void init()
 	ConsoleCursor.dwSize = 1;
 	SetConsoleCursorInfo(consoleHandle, &ConsoleCursor);
 }
-void gotoxy(short x, short y)
+void gotoxy(int x, int y)
 {
 	HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 	COORD pos;
@@ -139,7 +175,7 @@ void gotoxy(short x, short y)
 	pos.Y = y;
 	SetConsoleCursorPosition(consoleHandle, pos);
 }
-void setColor(short forground, short background)
+void setColor(int forground, int background)
 {
 	HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE); // 콘솔 핸들가져오기 
 	int code = forground + background * 16;
@@ -149,7 +185,7 @@ void titleDraw()
 {
 
 }
-short menuDraw()
+int menuDraw()
 {
 	int x = 24;
 	int y = 12;
@@ -189,7 +225,7 @@ short menuDraw()
 		}
 	}
 }
-short keyControl() {
+int keyControl() {
 	char temp = _getch();
 
 	if (temp == 'w' || temp == 'W')
@@ -217,25 +253,80 @@ void infoDraw()
 {
 
 }
-void creatmap(short index)
+void creatmap()
 {
-	memcpy(maps[index], initmap, sizeof(initmap));
-	srand(time(NULL));
-	char* changePoint = (char*)&maps + index * 32 * 32;
-	for (int i = 0; i < 4; i++)
+	srand(rand());
+	int reset[MAPSIZE][6] = { 0 };
+	int index = 0, moveMap = 0;
+	memcpy(infomap, reset, sizeof(reset));
+	memcpy(maps[index], defaultmap, sizeof(defaultmap));
+	// 초기 맵 설정
+	pX = 20;
+	pY = 20;
+	maps[0][20][20] = PLAYER;
+	infomap[0][0] = (int) &maps[0];
+
+	for (index = 1; index < MAPSIZE; index++)
 	{
-		randomObjectMaking(WATER, changePoint);
+		int mapNumber, find = 1;
+		memcpy(maps[index], defaultmap, sizeof(defaultmap));
+		infomap[index][0] = (int)&maps[index];
+		mapNumber = rand() % index;
+		while (find)
+		{
+			moveMap = rand() % 4;
+			if ((infomap[mapNumber][1] >> 3*moveMap)%8)
+			{
+				mapNumber = infomap[mapNumber][2 + moveMap];
+				continue;
+			}
+			else
+			{
+				find = 0;
+				infomap[mapNumber][2 + moveMap] = index;
+				infomap[mapNumber][1] += (1 << 3 * moveMap);
+				if (moveMap == EAST)
+				{
+					infomap[index][3] = mapNumber; // 2+ WAST(1)
+					infomap[index][1] += (1 << 3 * WAST);
+				}
+				if (moveMap == WAST)
+				{
+					infomap[index][2] = mapNumber; // 2+ EAST(0)
+					infomap[index][1] += (1 << 3 * EAST);
+				}
+				if (moveMap == SOUTH)
+				{
+					infomap[index][5] = mapNumber; // 2+ NORTH(3)
+					infomap[index][1] += (1 << 3 * NORTH);
+				}
+				if (moveMap == NORTH)
+				{
+					infomap[index][4] = mapNumber; // 2+ SOUTH(2)
+					infomap[index][1] += (1 << 3 * SOUTH);
+				}
+			}
+		}
+		
+		int i, fooditem=0, wateritem=0;
+		fooditem = rand() % 5, wateritem = rand() % 5;
+		for (i = 0; i < fooditem; i++)
+		{
+			randomObjectMaking(FOOD, (char*)maps[index]);
+		}
+		for (i = 0; i < fooditem; i++)
+		{
+			randomObjectMaking(WATER, (char*)maps[index]);
+		}
 	}
-	for (int i = 0; i < 4; i++)
-	{
-		randomObjectMaking(FOOD, changePoint);
-	}
-	randomObjectMaking(PLAYER, changePoint);
+	//char* changePoint = (char*)&maps + index * 32 * 32;
+	
+	
 
 }
 void randomObjectMaking(char object, char *map)
 {
-	short posx, posy;
+	int posx, posy;
 	while (1)
 	{
 		srand(rand());
@@ -247,7 +338,7 @@ void randomObjectMaking(char object, char *map)
 			break;
 	}
 }
-void drawMap(short pos)
+void drawMap(int pos)
 {
 	system("cls");
 	int h, w;
@@ -257,42 +348,130 @@ void drawMap(short pos)
 		for (w = 0; w < 32; w++)
 		{
 			temp = maps[pos][h][w];
-			if (temp == '0')
+			if (temp == '0' || temp == NULL)
 			{
 				setColor(black, black);
-				printf("   ");
+				printf(" ");
 			}
 			else if (temp == '1')
 			{
 				setColor(white, white);
-				printf("   ");
+				printf(" ");
 			}
 			else if (temp == PLAYER)
 			{
 				//플레이어 X,Y 위치 저장
-				pX = w;
-				pY = h;
 				setColor(cyan, black);
-				printf(" @ ");
+				printf("@");
 			}
 			else if (temp == WATER)
 			{
 				setColor(black, cyan);
-				printf(" W ");
+				printf("W");
 			}
 			else if (temp == FOOD)
 			{
 				setColor(black, lightgreen);
-				printf(" F ");
+				printf("F");
 			}
 			else
 			{
 				setColor(white, white);
-				printf("   ");
+				printf(" ");
 			}
 		}
 		setColor(black, black);
 		printf("\n");
 	}
 	setColor(white, black);
+}
+int mobile(char object)
+{
+	switch (object)
+	{
+	case WALL:
+	case DOORWALL:
+	case PLAYER:
+	case FOOD:
+	case WATER:
+		return 0;
+	case '*':
+		return 2;
+	default:
+		return 1;
+	}
+}
+int move(int moveObject, int mappos, int x, int y)
+{
+	gotoxy(34, 34);
+	printf("%d, %d", pX, pY);
+	char object = maps[mappos][pX + x][pY + y];
+	int t = mobile(object);
+	if (t == 1)
+	{
+		maps[mappos][pX + x][pY + y] == object;
+		maps[mappos][pX][pY] = '0';
+
+		setColor(white, black);
+		gotoxy(pX, pY);
+		printf(" ");
+
+		setColor(cyan, black);
+		gotoxy(pX + x, pY + y);
+		printf("@");
+		pX += x;
+		pY += y;
+		return mappos;
+	}
+	else if (t == 2)
+	{
+		int newmappos;
+		if (pY + y == 31) // EAST
+		{
+			newmappos = infomap[mappos][2 + WAST];
+			if (newmappos)
+			{
+				maps[mappos][pX][pY] = '0';
+				pX = 15, pY = 0;
+			}
+			else
+				return mappos;
+		}
+		if (pY + y == 0) // WAST
+		{
+			newmappos = infomap[mappos][2 + EAST];
+			if (newmappos)
+			{
+				maps[mappos][pX][pY] = '0';
+				pX = 15, pY = 31;
+			}
+			else
+				return mappos;
+		}
+		if (pX + x == 31) // SOUTH
+		{
+			newmappos = infomap[mappos][2 + NORTH];
+			if (newmappos)
+			{
+				maps[mappos][pX][pY] = '0';
+				pX = 31, pY = 15;
+			}
+			else
+				return mappos;
+		}
+		if (pX + x == 0) // NORTH
+		{
+			newmappos = infomap[mappos][2 + SOUTH];
+			if (newmappos)
+			{
+				maps[mappos][pX][pY] = '0';
+				pX = 31, pY = 15;
+			}
+			else
+				return mappos;
+		}
+		drawMap(newmappos);
+		return newmappos;
+	}
+
 }
