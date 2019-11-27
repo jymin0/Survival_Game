@@ -82,7 +82,8 @@ char defaultmap[32][32] = {
 	{"0111111111111#@@@#1111111111110"},
 	{"0000000000000#***#0000000000000"},
 };
-int infomap[MAPSIZE][6] = { 0 };
+int infomap[MAPSIZE][6];
+int reset[MAPSIZE][6];
 
 int pX=0;
 int pY=0;
@@ -115,6 +116,16 @@ int main()
 		{
 			creatmap();
 			Sleep(500);
+			system("cls");
+			for (int x = 0; x < MAPSIZE; x++)
+			{
+				printf("\n%d\n", x);
+				printf("EAST= %d, ", infomap[x][2]);
+				printf("WAST= %d, ", infomap[x][3]);
+				printf("SOUTH= %d, ", infomap[x][4]);
+				printf("NORTH= %d, ", infomap[x][5]);
+			}
+			_getch();
 			drawMap(0);
 			int mKey;
 			int playing = 1;
@@ -166,6 +177,14 @@ void init()
 	ConsoleCursor.bVisible = 0;
 	ConsoleCursor.dwSize = 1;
 	SetConsoleCursorInfo(consoleHandle, &ConsoleCursor);
+
+	for (int x = 0; x < MAPSIZE; x++)
+	{
+		for (int y = 0; y < 6; y++)
+		{
+			reset[x][y] = -1;
+		}
+	}
 }
 void gotoxy(int x, int y)
 {
@@ -256,7 +275,6 @@ void infoDraw()
 void creatmap()
 {
 	srand(rand());
-	int reset[MAPSIZE][6] = { 0 };
 	int index = 0, moveMap = 0;
 	memcpy(infomap, reset, sizeof(reset));
 	memcpy(maps[index], defaultmap, sizeof(defaultmap));
@@ -275,7 +293,7 @@ void creatmap()
 		while (find)
 		{
 			moveMap = rand() % 4;
-			if ((infomap[mapNumber][1] >> 3*moveMap)%8)
+			if (infomap[mapNumber][2+moveMap] != -1)
 			{
 				mapNumber = infomap[mapNumber][2 + moveMap];
 				continue;
@@ -383,7 +401,38 @@ void drawMap(int pos)
 		setColor(black, black);
 		printf("\n");
 	}
+	setColor(red, red);
+	gotoxy(46, 34);
+	printf(" ");
+	setColor(green, green);
+	if (infomap[pos][2 + EAST] != -1)
+	{
+		gotoxy(48, 34);
+		printf(" ");
+	}
+	if (infomap[pos][2 + WAST] != -1)
+	{
+		gotoxy(44, 34);
+		printf(" ");
+	}
+	if (infomap[pos][2 + SOUTH] != -1)
+	{
+		gotoxy(46, 32);
+		printf(" ");
+	}
+	if (infomap[pos][2 + NORTH] != -1)
+	{
+		gotoxy(46, 36);
+		printf(" ");
+	}
 	setColor(white, black);
+	gotoxy(18, 40);
+	printf("pos=%2d ", pos);
+	for (int a = 0; a < 4; a++)
+	{
+		gotoxy(20, 40 + a);
+		printf("a[%d]=%d ",a, infomap[pos][2 + a]);
+	}
 }
 int mobile(char object)
 {
@@ -409,7 +458,7 @@ int move(int moveObject, int mappos, int x, int y)
 	int t = mobile(object);
 	if (t == 1)
 	{
-		maps[mappos][pX + x][pY + y] == object;
+		//maps[mappos][pX + x][pY + y] == object;
 		maps[mappos][pX][pY] = '0';
 
 		setColor(white, black);
@@ -426,52 +475,61 @@ int move(int moveObject, int mappos, int x, int y)
 	else if (t == 2)
 	{
 		int newmappos;
+		int moveNewMap = 0;
 		if (pY + y == 31) // EAST
 		{
-			newmappos = infomap[mappos][2 + WAST];
-			if (newmappos)
+			newmappos = infomap[mappos][2 + EAST];
+			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
-				pX = 15, pY = 0;
+				pX = 15, pY = 1;
+				moveNewMap = 1;
 			}
 			else
 				return mappos;
 		}
 		if (pY + y == 0) // WAST
 		{
-			newmappos = infomap[mappos][2 + EAST];
-			if (newmappos)
+			newmappos = infomap[mappos][2 + WAST];
+			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
-				pX = 15, pY = 31;
+				pX = 15, pY = 30;
+				moveNewMap = 1;
 			}
 			else
 				return mappos;
 		}
 		if (pX + x == 31) // SOUTH
 		{
-			newmappos = infomap[mappos][2 + NORTH];
-			if (newmappos)
+			newmappos = infomap[mappos][2 + SOUTH];
+			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
-				pX = 31, pY = 15;
+				pX = 30, pY = 15;
+				moveNewMap = 1;
 			}
 			else
 				return mappos;
 		}
 		if (pX + x == 0) // NORTH
 		{
-			newmappos = infomap[mappos][2 + SOUTH];
-			if (newmappos)
+			newmappos = infomap[mappos][2 + NORTH];
+			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
-				pX = 31, pY = 15;
+				pX = 1, pY = 15;
+				moveNewMap = 1;
 			}
 			else
 				return mappos;
 		}
-		drawMap(newmappos);
-		return newmappos;
+		if (moveNewMap == 1)
+		{
+			drawMap(newmappos);
+			return newmappos;
+		}
 	}
+	return mappos;
 
 }
