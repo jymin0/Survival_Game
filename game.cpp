@@ -23,6 +23,8 @@
 #define WAST 1
 #define SOUTH 2
 #define NORTH 3
+#define MAPNUMBER 4
+#define DOOROPEN 5
 
 #define MAPSIZE 10
 
@@ -85,8 +87,8 @@ char defaultmap[32][32] = {
 int infomap[MAPSIZE][6];
 int reset[MAPSIZE][6];
 
-int pX=0;
-int pY=0;
+int pX = 0;
+int pY = 0;
 
 // funcions list
 void init();
@@ -96,7 +98,7 @@ void titleDraw();
 int menuDraw();
 int keyControl();
 void infoDraw();
-void randomObjectMaking(char, char *);
+void randomObjectMaking(char, char*);
 void creatmap();
 void drawMap(int);
 int mobile(char);
@@ -120,10 +122,10 @@ int main()
 			for (int x = 0; x < MAPSIZE; x++)
 			{
 				printf("\n%d\n", x);
-				printf("EAST= %d, ", infomap[x][2]);
-				printf("WAST= %d, ", infomap[x][3]);
-				printf("SOUTH= %d, ", infomap[x][4]);
-				printf("NORTH= %d, ", infomap[x][5]);
+				printf("EAST= %d, ", infomap[x][EAST]);
+				printf("WAST= %d, ", infomap[x][WAST]);
+				printf("SOUTH= %d, ", infomap[x][SOUTH]);
+				printf("NORTH= %d, ", infomap[x][NORTH]);
 			}
 			_getch();
 			drawMap(0);
@@ -202,7 +204,17 @@ void setColor(int forground, int background)
 }
 void titleDraw()
 {
-
+	printf("\n\n\n\n"); // 맨위에 4칸 개행  
+	printf("    00OOOOOOOOOOO000000000000000000O000000000000000O000                                   \n");
+	printf("    0           O     OOOOOOOOOOO  O    OOOOOOOOO  O  0                                   \n");
+	printf("    0           O          O       O    O       O  O  0                                   \n");
+	printf("    0OOOOOOOOOOOOO        O O      O    O       O  O  0                                   \n");
+	printf("    0      O             O   O     O    O       O  OOOO                                   \n");
+	printf("    0OOOOO0 OOOOO       O     O    O    O       O  O  0                                   \n");
+	printf("    0     0 O   O      O       O   O    O       O  O  0                                   \n");
+	printf("    0OOOOOO O   O     O         O  O    OOOOOOOOO  O  0                                   \n");
+	printf("    0O      O   O                  O               O  0                                   \n");
+	printf("    0OOOOOO0OOOOO000000000000000000O000000000000000O000                                   \n");
 }
 int menuDraw()
 {
@@ -282,51 +294,51 @@ void creatmap()
 	pX = 20;
 	pY = 20;
 	maps[0][20][20] = PLAYER;
-	infomap[0][0] = (int) &maps[0];
+	infomap[0][MAPNUMBER] = 0;
 
 	for (index = 1; index < MAPSIZE; index++)
 	{
 		int mapNumber, find = 1;
 		memcpy(maps[index], defaultmap, sizeof(defaultmap));
-		infomap[index][0] = (int)&maps[index];
+		infomap[index][MAPNUMBER] = index;
 		mapNumber = rand() % index;
 		while (find)
 		{
 			moveMap = rand() % 4;
-			if (infomap[mapNumber][2+moveMap] != -1)
+			if (infomap[mapNumber][moveMap] != -1)
 			{
-				mapNumber = infomap[mapNumber][2 + moveMap];
+				mapNumber = infomap[mapNumber][moveMap];
 				continue;
 			}
 			else
 			{
 				find = 0;
-				infomap[mapNumber][2 + moveMap] = index;
-				infomap[mapNumber][1] += (1 << 3 * moveMap);
+				infomap[mapNumber][moveMap] = index;
+				//infomap[mapNumber][1] += (1 << 3 * moveMap);
 				if (moveMap == EAST)
 				{
-					infomap[index][3] = mapNumber; // 2+ WAST(1)
-					infomap[index][1] += (1 << 3 * WAST);
+					infomap[index][WAST] = mapNumber;
+					//infomap[index][1] += (1 << 3 * WAST);
 				}
 				if (moveMap == WAST)
 				{
-					infomap[index][2] = mapNumber; // 2+ EAST(0)
-					infomap[index][1] += (1 << 3 * EAST);
+					infomap[index][EAST] = mapNumber;
+					//infomap[index][1] += (1 << 3 * EAST);
 				}
 				if (moveMap == SOUTH)
 				{
-					infomap[index][5] = mapNumber; // 2+ NORTH(3)
-					infomap[index][1] += (1 << 3 * NORTH);
+					infomap[index][NORTH] = mapNumber;
+					//infomap[index][1] += (1 << 3 * NORTH);
 				}
 				if (moveMap == NORTH)
 				{
-					infomap[index][4] = mapNumber; // 2+ SOUTH(2)
-					infomap[index][1] += (1 << 3 * SOUTH);
+					infomap[index][SOUTH] = mapNumber;
+					//infomap[index][1] += (1 << 3 * SOUTH);
 				}
 			}
 		}
-		
-		int i, fooditem=0, wateritem=0;
+
+		int i, fooditem = 0, wateritem = 0;
 		fooditem = rand() % 5, wateritem = rand() % 5;
 		for (i = 0; i < fooditem; i++)
 		{
@@ -338,11 +350,11 @@ void creatmap()
 		}
 	}
 	//char* changePoint = (char*)&maps + index * 32 * 32;
-	
-	
+
+
 
 }
-void randomObjectMaking(char object, char *map)
+void randomObjectMaking(char object, char* map)
 {
 	int posx, posy;
 	while (1)
@@ -350,10 +362,10 @@ void randomObjectMaking(char object, char *map)
 		srand(rand());
 		posx = 2 + rand() % 28;
 		posy = 2 + rand() % 28;
-		char *p = map+posx * 32;
+		char* p = map + posx * 32;
 		if (p[posy] == '0')
 			p[posy] = object;
-			break;
+		break;
 	}
 }
 void drawMap(int pos)
@@ -405,22 +417,22 @@ void drawMap(int pos)
 	gotoxy(46, 34);
 	printf(" ");
 	setColor(green, green);
-	if (infomap[pos][2 + EAST] != -1)
+	if (infomap[pos][EAST] != -1)
 	{
 		gotoxy(48, 34);
 		printf(" ");
 	}
-	if (infomap[pos][2 + WAST] != -1)
+	if (infomap[pos][WAST] != -1)
 	{
 		gotoxy(44, 34);
 		printf(" ");
 	}
-	if (infomap[pos][2 + SOUTH] != -1)
+	if (infomap[pos][SOUTH] != -1)
 	{
 		gotoxy(46, 32);
 		printf(" ");
 	}
-	if (infomap[pos][2 + NORTH] != -1)
+	if (infomap[pos][NORTH] != -1)
 	{
 		gotoxy(46, 36);
 		printf(" ");
@@ -431,7 +443,7 @@ void drawMap(int pos)
 	for (int a = 0; a < 4; a++)
 	{
 		gotoxy(20, 40 + a);
-		printf("a[%d]=%d ",a, infomap[pos][2 + a]);
+		printf("a[%d]=%d ", a, infomap[pos][a]);
 	}
 }
 int mobile(char object)
@@ -476,9 +488,9 @@ int move(int moveObject, int mappos, int x, int y)
 	{
 		int newmappos;
 		int moveNewMap = 0;
-		if (pY + y == 31) // EAST
+		if (pY + y == 31) // SOUTH
 		{
-			newmappos = infomap[mappos][2 + EAST];
+			newmappos = infomap[mappos][SOUTH];
 			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
@@ -488,9 +500,9 @@ int move(int moveObject, int mappos, int x, int y)
 			else
 				return mappos;
 		}
-		if (pY + y == 0) // WAST
+		if (pY + y == 0) // NORTH
 		{
-			newmappos = infomap[mappos][2 + WAST];
+			newmappos = infomap[mappos][NORTH];
 			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
@@ -500,9 +512,9 @@ int move(int moveObject, int mappos, int x, int y)
 			else
 				return mappos;
 		}
-		if (pX + x == 31) // SOUTH
+		if (pX + x == 31) // EAST
 		{
-			newmappos = infomap[mappos][2 + SOUTH];
+			newmappos = infomap[mappos][EAST];
 			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
@@ -512,9 +524,9 @@ int move(int moveObject, int mappos, int x, int y)
 			else
 				return mappos;
 		}
-		if (pX + x == 0) // NORTH
+		if (pX + x == 0) // WAST
 		{
-			newmappos = infomap[mappos][2 + NORTH];
+			newmappos = infomap[mappos][WAST];
 			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
@@ -526,6 +538,7 @@ int move(int moveObject, int mappos, int x, int y)
 		}
 		if (moveNewMap == 1)
 		{
+			//maps[newmappos][pX][pY] = PLAYER;
 			drawMap(newmappos);
 			return newmappos;
 		}
