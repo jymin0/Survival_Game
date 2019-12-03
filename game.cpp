@@ -63,12 +63,12 @@ char defaultmap[32][32] = {
 	{"0100000000000000000000000000010"},
 	{"0100000000000000000000000000010"},
 	{"0100000000000000000000000000010"},
+	{"##000000000000000000000000000##"},
+	{"*@000000000000000000000000000@*"},
+	{"*@000000000000000000000000000@*"},
+	{"*@000000000000000000000000000@*"},
+	{"##000000000000000000000000000##"},
 	{"0100000000000000000000000000010"},
-	{"##000000000000000000000000000##"},
-	{"*@000000000000000000000000000@*"},
-	{"*@000000000000000000000000000@*"},
-	{"*@000000000000000000000000000@*"},
-	{"##000000000000000000000000000##"},
 	{"0100000000000000000000000000010"},
 	{"0100000000000000000000000000010"},
 	{"0100000000000000000000000000010"},
@@ -377,41 +377,41 @@ void drawMap(int pos)
 	{
 		for (w = 0; w < 32; w++)
 		{
+			gotoxy(2 * h, w);
 			temp = maps[pos][h][w];
 			if (temp == '0' || temp == NULL)
 			{
 				setColor(black, black);
-				printf(" ");
+				printf("  ");
 			}
 			else if (temp == '1')
 			{
 				setColor(white, white);
-				printf(" ");
+				printf("  ");
 			}
 			else if (temp == PLAYER)
 			{
 				//플레이어 X,Y 위치 저장
 				setColor(cyan, black);
-				printf("@");
+				printf("@@");
 			}
 			else if (temp == WATER)
 			{
 				setColor(black, cyan);
-				printf("W");
+				printf("WW");
 			}
 			else if (temp == FOOD)
 			{
 				setColor(black, lightgreen);
-				printf("F");
+				printf("FF");
 			}
 			else
 			{
 				setColor(white, white);
-				printf(" ");
+				printf("  ");
 			}
 		}
 		setColor(black, black);
-		printf("\n");
 	}
 	setColor(red, red);
 	gotoxy(46, 34);
@@ -429,22 +429,27 @@ void drawMap(int pos)
 	}
 	if (infomap[pos][SOUTH] != -1)
 	{
-		gotoxy(46, 32);
+		gotoxy(46, 36);
 		printf(" ");
 	}
 	if (infomap[pos][NORTH] != -1)
 	{
-		gotoxy(46, 36);
+		gotoxy(46, 32);
 		printf(" ");
 	}
 	setColor(white, black);
-	gotoxy(18, 40);
+	gotoxy(60, 0);
 	printf("pos=%2d ", pos);
-	for (int a = 0; a < 4; a++)
-	{
-		gotoxy(20, 40 + a);
-		printf("a[%d]=%d ", a, infomap[pos][a]);
-	}
+	
+	gotoxy(62, 1);
+	printf("EAST=%d ", infomap[pos][EAST]);
+	gotoxy(62, 2);
+	printf("WAST=%d ", infomap[pos][WAST]);
+	gotoxy(62, 3);
+	printf("SOUTH=%d ", infomap[pos][SOUTH]);
+	gotoxy(62, 4);
+	printf("NORTH=%d ", infomap[pos][NORTH]);
+	
 }
 int mobile(char object)
 {
@@ -474,12 +479,12 @@ int move(int moveObject, int mappos, int x, int y)
 		maps[mappos][pX][pY] = '0';
 
 		setColor(white, black);
-		gotoxy(pX, pY);
-		printf(" ");
+		gotoxy(2*pX, pY);
+		printf("  ");
 
 		setColor(cyan, black);
-		gotoxy(pX + x, pY + y);
-		printf("@");
+		gotoxy(2*(pX + x), pY + y);
+		printf("@@");
 		pX += x;
 		pY += y;
 		return mappos;
@@ -488,13 +493,13 @@ int move(int moveObject, int mappos, int x, int y)
 	{
 		int newmappos;
 		int moveNewMap = 0;
-		if (pY + y == 31) // SOUTH
+		if (pY + y == 30) // SOUTH
 		{
 			newmappos = infomap[mappos][SOUTH];
 			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
-				pX = 15, pY = 1;
+				pX = 14, pY = 28;
 				moveNewMap = 1;
 			}
 			else
@@ -506,7 +511,7 @@ int move(int moveObject, int mappos, int x, int y)
 			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
-				pX = 15, pY = 30;
+				pX = 14, pY = 2;
 				moveNewMap = 1;
 			}
 			else
@@ -518,7 +523,7 @@ int move(int moveObject, int mappos, int x, int y)
 			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
-				pX = 30, pY = 15;
+				pX = 2, pY = 15;
 				moveNewMap = 1;
 			}
 			else
@@ -530,7 +535,7 @@ int move(int moveObject, int mappos, int x, int y)
 			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
-				pX = 1, pY = 15;
+				pX = 28, pY = 15;
 				moveNewMap = 1;
 			}
 			else
@@ -538,7 +543,7 @@ int move(int moveObject, int mappos, int x, int y)
 		}
 		if (moveNewMap == 1)
 		{
-			//maps[newmappos][pX][pY] = PLAYER;
+			maps[newmappos][pX][pY] = PLAYER;
 			drawMap(newmappos);
 			return newmappos;
 		}
