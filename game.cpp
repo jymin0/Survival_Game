@@ -18,7 +18,7 @@
 #define WATER '3'
 #define FOOD '4'
 #define DOOR '*'
-#define NEXT 'N'
+#define MEDICKIT '+'
 
 #define EAST 0
 #define WAST 1
@@ -48,8 +48,8 @@ enum {
 	yellow,
 	white
 };
-char maps[MAPSIZE][32][32];
-char defaultmap[32][32] = {
+char maps[MAPSIZE][60][60];
+char defaultmap[60][60] = {
 	// 0: 빈공간, 1: 벽, *; 문, #: 벽(문o), @: 벽(문x), +:표시선
 	// 게임 내 공간 [2][2]~[29][29], 정중앙 [15][15]
 	{"0000000000000#***#0000000000000"},
@@ -86,12 +86,13 @@ char defaultmap[32][32] = {
 	{"0000000000000#***#0000000000000"},
 };
 int infomap[MAPSIZE][6];
-int resetmap[MAPSIZE][6];
-int minimap[MAPSIZE][2] = { 0 };
-int resetminimap[MAPSIZE][2] = { 0 };
+int reset[MAPSIZE][6];
 
 int pX = 0;
 int pY = 0;
+int pHealth = 10;
+int pFood = 10;
+int pWater = 10;
 
 // funcions list
 void init();
@@ -100,21 +101,22 @@ void setColor(int, int);
 void titleDraw();
 int menuDraw();
 int keyControl();
-void infoDraw();
+void infoDraw(); 
 void randomObjectMaking(char, char*);
 void creatmap();
-void checkrotatemap(int);
-void creatminimap();
 void drawMap(int);
-void drawMiniMap(int);
 int mobile(char);
 int move(int, int, int, int);
+void drawUI(int pX, int pY, int pHealth, int pFood, int pWater);
+void drawStart();
 
 // main function
 int main()
 {
 	srand(time(NULL));
 	int menuCode = -1;
+	int j;
+	char string2[30] = { '-','-','-','-','-','-','-','-','-','-','-','B','y','e',' ','B','y','e','-','-','-','-','-','-','-','-','-','-','-','-' };
 	init();
 	while (1)
 	{
@@ -123,7 +125,6 @@ int main()
 		if (menuCode == 0)
 		{
 			creatmap();
-			creatminimap();
 			Sleep(500);
 			system("cls");
 			for (int x = 0; x < MAPSIZE; x++)
@@ -133,14 +134,22 @@ int main()
 				printf("WAST= %d, ", infomap[x][WAST]);
 				printf("SOUTH= %d, ", infomap[x][SOUTH]);
 				printf("NORTH= %d, ", infomap[x][NORTH]);
-				printf("x=%d, y=%d", minimap[x][0], minimap[x][1]);
 			}
 			_getch();
+	
 			drawMap(0);
-			drawMiniMap(0);
+			drawStart();
+			setColor(white, black);
+			gotoxy(28, 10);
+			Sleep(300);
 			int mKey;
 			int playing = 1;
 			int mappos = 0;
+			int cHealth = 0;
+			int cFood = 0;
+			int cWater = 0;
+			int i;
+			char string[10] = { 'G','A','M','E',' ','O','V','E','R'};
 			while (playing)
 			{
 				mKey = keyControl();
@@ -148,17 +157,71 @@ int main()
 				{
 				case UP:
 					mappos = move(PLAYER, mappos, 0, -1);
+					cFood++;
+					cWater++;
 					break;
 				case DOWN:
 					mappos = move(PLAYER, mappos, 0, 1);
+					cFood++;
+					cWater++;
 					break;
 				case RIGHT:
 					mappos = move(PLAYER, mappos, 1, 0);
+					cFood++;
+					cWater++;
 					break;
 				case LEFT:
 					mappos = move(PLAYER, mappos, -1, 0);
+					cFood++;
+					cWater++;
 					break;
 				case SUBMIT:
+					playing = 0;
+				}
+				if (cFood % 15 == 0)
+				{
+					if (pFood > 0){
+						if (pWater > 0) {
+							pFood -= 1;
+							if (pHealth < 10) {
+								pHealth += 1;
+							}
+						}
+						else if (pWater == 0) {
+							pFood -= 1;
+						}
+					}
+					else if (pFood == 0) {
+						pHealth -= 1;
+					}
+				}
+				if(cWater % 10 == 0)
+				{
+					if (pWater > 0) {
+						pWater -= 1;
+					}
+					else if (pWater == 0) {
+						pHealth -= 1;
+					}
+				}
+				drawUI(pX, pY, pHealth, pFood, pWater);
+				if (pHealth == 0)
+				{   
+					Sleep(200);
+					setColor(white, black);
+					gotoxy(27, 10);
+					for (i = 0; i < 9; i++) 
+					{
+						printf("%c", string[i]);
+						Sleep(250);
+					}
+					gotoxy(27, 10);
+					for (i = 0; i < 9; i++)
+					{
+						printf(" ");
+						Sleep(150);
+					}
+					Sleep(300);
 					playing = 0;
 				}
 			}
@@ -175,9 +238,12 @@ int main()
 		system("cls");
 	}
 	gotoxy(12, 16);
-	printf("게임이 종료되었습니다!!!");
-	_getch();
-	return 0;
+	for (j = 0; j < 29; j++)
+	{
+		printf("%c", string2[j]);
+		Sleep(150);
+	}
+	return _getch();
 }
 
 // function seting
@@ -194,13 +260,8 @@ void init()
 	{
 		for (int y = 0; y < 6; y++)
 		{
-			resetmap[x][y] = -1;
+			reset[x][y] = -1;
 		}
-	}
-	for (int x = 0; x < MAPSIZE; x++)
-	{
-		resetminimap[x][0] = 0;
-		resetminimap[x][1] = 0;
 	}
 }
 void gotoxy(int x, int y)
@@ -219,28 +280,31 @@ void setColor(int forground, int background)
 }
 void titleDraw()
 {
-	printf("\n\n\n\n"); // 맨위에 4칸 개행  
-	printf("    00OOOOOOOOOOO000000000000000000O000000000000000O000                                   \n");
-	printf("    0           O     OOOOOOOOOOO  O    OOOOOOOOO  O  0                                   \n");
-	printf("    0           O          O       O    O       O  O  0                                   \n");
-	printf("    0OOOOOOOOOOOOO        O O      O    O       O  O  0                                   \n");
-	printf("    0      O             O   O     O    O       O  OOOO                                   \n");
-	printf("    0OOOOO0 OOOOO       O     O    O    O       O  O  0                                   \n");
-	printf("    0     0 O   O      O       O   O    O       O  O  0                                   \n");
-	printf("    0OOOOOO O   O     O         O  O    OOOOOOOOO  O  0                                   \n");
-	printf("    0O      O   O                  O               O  0                                   \n");
-	printf("    0OOOOOO0OOOOO000000000000000000O000000000000000O000                                   \n");
+	setColor(white, black);
+	printf("\n\n\n"); // 맨위에 4칸 개행
+	printf("                                                              \n");
+	printf("   ■■■■■■■    ■■■■■■■  ■   ■■■■■■  ■    \n");
+	printf("               ■          ■        ■   ■        ■  ■    \n");
+	printf("               ■         ■■       ■   ■ ●  ● ■  ■    \n");
+	printf(" ■■■■■■■■■      ■  ■      ■   ■        ■  ■    \n");
+	printf("         ■             ■    ■     ■   ■        ■  ■■  \n");
+	printf("   ■■■■■■■      ■      ■    ■   ■        ■  ■    \n");
+	printf("         ■    ■     ■        ■   ■   ■        ■  ■    \n");
+	printf("   ■■■■    ■    ■          ■  ■   ■        ■  ■    \n");
+	printf("   ■    ■    ■   ■            ■ ■   ■   ▼   ■  ■    \n");
+	printf("   ■■■■■■■  ■              ■■   ■■■■■■  ■    \n");
+	printf("                                                              \n");
 }
 int menuDraw()
 {
 	int x = 24;
 	int y = 12;
 	gotoxy(x - 2, y); // -2 한 이유는 > 를 출력해야하기 때문에  
-	printf("> 게임시작");
+	printf("☞ 게임시작");
 	gotoxy(x, y + 1);
-	printf("게임정보");
+	printf(" 게임정보");
 	gotoxy(x, y + 2);
-	printf("  종료  ");
+	printf("   종료  ");
 	while (1) { // 무한반복  
 		int n = keyControl(); // 키보드 이벤트를 키값으로 받아오기  
 		switch (n) {
@@ -249,7 +313,7 @@ int menuDraw()
 				gotoxy(x - 2, y); // x-2 하는 이유는 ">"를 두칸 이전에 출력하기위해  
 				printf(" "); // 원래 위치를 지우고  
 				gotoxy(x - 2, --y); // 새로 이동한 위치로 이동하여  
-				printf(">"); // 다시 그리기  
+				printf("☞"); // 다시 그리기  
 			}
 			break;
 		}
@@ -259,7 +323,7 @@ int menuDraw()
 				gotoxy(x - 2, y);
 				printf(" ");
 				gotoxy(x - 2, ++y);
-				printf(">");
+				printf("☞");
 			}
 			break;
 		}
@@ -297,14 +361,25 @@ int keyControl() {
 }
 void infoDraw()
 {
+	system("cls"); // 화면 모두 지우기  
+	printf("\n\n");
+	printf("                        [ 조작법 ]\n\n");
+	printf("                      이동: W, A, S, D\n");
+	printf("                      선택: 스페이스바\n\n\n\n\n");
+	printf("              개발자: jyoh5005, yandusty, jymin0\n");
+	printf("         스페이스바를 누르면 메인화면으로 이동합니다.");
 
+	while (1) {
+		if (keyControl() == SUBMIT) {
+			break;
+		}
+	}
 }
 void creatmap()
 {
-	int h = 0, w = 0;
 	srand(rand());
 	int index = 0, moveMap = 0;
-	memcpy(infomap, resetmap, sizeof(resetmap));
+	memcpy(infomap, reset, sizeof(reset));
 	memcpy(maps[index], defaultmap, sizeof(defaultmap));
 	// 초기 맵 설정
 	pX = 20;
@@ -328,56 +403,34 @@ void creatmap()
 			}
 			else
 			{
+				find = 0;
 				infomap[mapNumber][moveMap] = index;
+				//infomap[mapNumber][1] += (1 << 3 * moveMap);
 				if (moveMap == EAST)
 				{
-					if (w < 8)
-					{
-						find = 0, w++;
-						infomap[index][WAST] = mapNumber;
-						checkrotatemap(index);
-					}
-					else
-						continue;
+					infomap[index][WAST] = mapNumber;
+					//infomap[index][1] += (1 << 3 * WAST);
 				}
 				if (moveMap == WAST)
 				{
-					if (w < 8)
-					{
-						find = 0, w++;
-						infomap[index][EAST] = mapNumber;
-						checkrotatemap(index);
-					}
-					else
-						continue;
+					infomap[index][EAST] = mapNumber;
+					//infomap[index][1] += (1 << 3 * EAST);
 				}
 				if (moveMap == SOUTH)
 				{
-					if (h < 8)
-					{
-						find = 0, h++;
-						infomap[index][NORTH] = mapNumber;
-						checkrotatemap(index);
-					}
-					else
-						continue;
+					infomap[index][NORTH] = mapNumber;
+					//infomap[index][1] += (1 << 3 * NORTH);
 				}
 				if (moveMap == NORTH)
 				{
-					if (h < 8)
-					{
-						find = 0, h++;
-						infomap[index][SOUTH] = mapNumber;
-						checkrotatemap(index);
-					}
-					else
-						continue;
+					infomap[index][SOUTH] = mapNumber;
+					//infomap[index][1] += (1 << 3 * SOUTH);
 				}
 			}
 		}
 
 		int i, fooditem = 0, wateritem = 0;
-		fooditem = rand() % 5, wateritem = rand() % 5;
+		fooditem = rand() % 9, wateritem = rand() % 9;
 		for (i = 0; i < fooditem; i++)
 		{
 			randomObjectMaking(FOOD, (char*)maps[index]);
@@ -387,207 +440,9 @@ void creatmap()
 			randomObjectMaking(WATER, (char*)maps[index]);
 		}
 	}
-	int next = 1 + rand() % (MAPSIZE - 1);
-	randomObjectMaking(NEXT, (char*)maps[next]);
-	infomap[next][DOOROPEN] = 1;
+	//char* changePoint = (char*)&maps + index * 32 * 32;
 
-}
-void checkrotatemap(int index)
-{
-	int E, W, S, N;
-	//EAST
-	S = infomap[index][SOUTH];
-	if (S != -1)
-	{
-		E = infomap[S][EAST];
-		if (E != -1)
-		{
-			N = infomap[E][NORTH];
-			if (N != -1)
-			{
-				infomap[N][WAST] = index;
-				infomap[index][EAST] = N;
-			}
-		}
-	}
-	N = infomap[index][NORTH];
-	if (N != -1)
-	{
-		E = infomap[N][EAST];
-		if (E != -1)
-		{
-			S = infomap[E][SOUTH];
-			if (S != -1)
-			{
-				infomap[S][WAST] = index;
-				infomap[index][EAST] = S;
-			}
-		}
-	}
-	//WAST
-	S = infomap[index][SOUTH];
-	if (S != -1)
-	{
-		W = infomap[S][WAST];
-		if (W != -1)
-		{
-			N = infomap[W][NORTH];
-			if (N != -1)
-			{
-				infomap[N][EAST] = index;
-				infomap[index][WAST] = N;
-			}
-		}
-	}
-	N = infomap[index][NORTH];
-	if (N != -1)
-	{
-		W = infomap[N][WAST];
-		if (W != -1)
-		{
-			S = infomap[W][SOUTH];
-			if (S != -1)
-			{
-				infomap[S][EAST] = index;
-				infomap[index][WAST] = S;
-			}
-		}
-	}
-	//SOUTH
-	E = infomap[index][EAST];
-	if (E != -1)
-	{
-		S = infomap[E][SOUTH];
-		if (S != -1)
-		{
-			W = infomap[S][WAST];
-			if (N != -1)
-			{
-				infomap[W][NORTH] = index;
-				infomap[index][SOUTH] = W;
-			}
-		}
-	}
-	W = infomap[index][WAST];
-	if (W != -1)
-	{
-		S = infomap[W][SOUTH];
-		if (S != -1)
-		{
-			E = infomap[S][EAST];
-			if (E != -1)
-			{
-				infomap[E][NORTH] = index;
-				infomap[index][SOUTH] = E;
-			}
-		}
-	}
-	//NORTH
-	E = infomap[index][EAST];
-	if (E != -1)
-	{
-		N = infomap[E][NORTH];
-		if (N != -1)
-		{
-			W = infomap[N][WAST];
-			if (N != -1)
-			{
-				infomap[W][SOUTH] = index;
-				infomap[index][NORTH] = W;
-			}
-		}
-	}
-	W = infomap[index][WAST];
-	if (W != -1)
-	{
-		N = infomap[W][NORTH];
-		if (N != -1)
-		{
-			E = infomap[N][EAST];
-			if (E != -1)
-			{
-				infomap[E][SOUTH] = index;
-				infomap[index][NORTH] = E;
-			}
-		}
-	}
-}
-void creatminimap()
-{
-	memcpy(minimap, resetminimap, sizeof(resetminimap));
-	int index, stop = 1;
-	int mapNumber[MAPSIZE] = { 1 };
-	minimap[0][0] = 0, minimap[0][1] = 0;
-	if (infomap[0][EAST] != -1)
-		minimap[(infomap[0][EAST])][0]++, mapNumber[(infomap[0][EAST])] = 1, stop++;
-	if (infomap[0][WAST] != -1)
-		minimap[(infomap[0][WAST])][0]--, mapNumber[(infomap[0][WAST])] = 1, stop++;
-	if (infomap[0][SOUTH] != -1)
-		minimap[(infomap[0][SOUTH])][1]--, mapNumber[(infomap[0][SOUTH])] = 1, stop++;	
-	if (infomap[0][NORTH] != -1)
-		minimap[(infomap[0][NORTH])][1]++, mapNumber[(infomap[0][NORTH])] = 1, stop++;
-	while (1)
-	{
-		if (stop == MAPSIZE)
-		{
-			return;
-		}
-		for (index = 1; index < MAPSIZE; index++)
-		{
-			if (!mapNumber[index])
-			{
-				int E = infomap[index][EAST];
-				int W = infomap[index][WAST];
-				int S = infomap[index][SOUTH];
-				int N = infomap[index][NORTH];
-				if (E != -1)
-				{
-					if (mapNumber[E])
-					{
-						memcpy(minimap[index], minimap[E], sizeof(minimap[index]));
-						minimap[index][0]--;
-						mapNumber[index] = 1;
-						stop++;
-						continue;
-					}
-				}
-				if (W != -1)
-				{
-					if (mapNumber[W])
-					{
-						memcpy(minimap[index], minimap[W], sizeof(minimap[index]));
-						minimap[index][0]++;
-						mapNumber[index] = 1;
-						stop++;
-						continue;
-					}
-				}
-				if (S != -1)
-				{
-					if (mapNumber[S])
-					{
-						memcpy(minimap[index], minimap[S], sizeof(minimap[index]));
-						minimap[index][1]++;
-						mapNumber[index] = 1;
-						stop++;
-						continue;
-					}
-				}
-				if (N != -1)
-				{
-					if (mapNumber[N])
-					{
-						memcpy(minimap[index], minimap[N], sizeof(minimap[index]));
-						minimap[index][1]--;
-						mapNumber[index] = 1;
-						stop++;
-						continue;
-					}
-				}
-			}
-		}
-	}
-	
+
 
 }
 void randomObjectMaking(char object, char* map)
@@ -641,11 +496,6 @@ void drawMap(int pos)
 				setColor(black, lightgreen);
 				printf("FF");
 			}
-			else if (temp == NEXT)
-			{
-				setColor(lightpurple, black);
-				printf("▣");
-			}
 			else
 			{
 				setColor(white, white);
@@ -654,60 +504,43 @@ void drawMap(int pos)
 		}
 		setColor(black, black);
 	}
+	setColor(red, red);
+	gotoxy(60, 36);
+	printf(" ");
+	setColor(green, green);
+	if (infomap[pos][EAST] != -1)
+	{
+		gotoxy(62, 36);
+		printf(" ");
+	}
+	if (infomap[pos][WAST] != -1)
+	{
+		gotoxy(58, 36);
+		printf(" ");
+	}
+	if (infomap[pos][SOUTH] != -1)
+	{
+		gotoxy(60, 38);
+		printf(" ");
+	}
+	if (infomap[pos][NORTH] != -1)
+	{
+		gotoxy(60, 34);
+		printf(" ");
+	}
 	setColor(white, black);
-	gotoxy(60, 0);
+	gotoxy(60, 2);
 	printf("pos=%2d ", pos);
-
-	gotoxy(62, 1);
-	printf("EAST=%d ", infomap[pos][EAST]);
-	gotoxy(62, 2);
-	printf("WAST=%d ", infomap[pos][WAST]);
+	
 	gotoxy(62, 3);
-	printf("SOUTH=%d ", infomap[pos][SOUTH]);
+	printf("EAST=%d ", infomap[pos][EAST]);
 	gotoxy(62, 4);
+	printf("WAST=%d ", infomap[pos][WAST]);
+	gotoxy(62, 5);
+	printf("SOUTH=%d ", infomap[pos][SOUTH]);
+	gotoxy(62, 6);
 	printf("NORTH=%d ", infomap[pos][NORTH]);
-
-}
-void drawMiniMap(int pos)
-{
-	setColor(yellow, yellow);
-	gotoxy(80, 20);
-	printf("  ");
-	for (int index = 1; index < MAPSIZE; index++)
-	{
-		if (infomap[index][DOOROPEN] == 1)
-		{
-			setColor(black, lightpurple);
-			gotoxy(80 + 4 * minimap[index][0], 20 - 2 * minimap[index][1]);
-			printf("▣");
-		}
-		else
-		{
-			setColor(green, green);
-			gotoxy(80 + 4 * minimap[index][0], 20 - 2 * minimap[index][1]);
-			printf("  ");
-		}
-	}
-	if (pos == 0)
-	{
-		setColor(cyan, yellow);
-		gotoxy(80, 20);
-		printf("●");
-	}
-	else if (infomap[pos][DOOROPEN] == 1)
-	{
-		setColor(black, lightpurple);
-		gotoxy(80 + 4 * minimap[pos][0], 20 - 2 * minimap[pos][1]);
-		printf("●");
-	}
-	else
-	{
-		setColor(cyan, red);
-		gotoxy(80 + 4 * minimap[pos][0], 20 - 2 * minimap[pos][1]);
-		printf("●");
-	}
-	setColor(white, black);
-
+	
 }
 int mobile(char object)
 {
@@ -716,9 +549,11 @@ int mobile(char object)
 	case WALL:
 	case DOORWALL:
 	case PLAYER:
+		return 0;
 	case FOOD:
 	case WATER:
-		return 0;
+	case MEDICKIT:
+		return 3;
 	case '*':
 		return 2;
 	default:
@@ -737,11 +572,11 @@ int move(int moveObject, int mappos, int x, int y)
 		maps[mappos][pX][pY] = '0';
 
 		setColor(white, black);
-		gotoxy(2 * pX, pY);
+		gotoxy(2*pX, pY);
 		printf("  ");
 
 		setColor(cyan, black);
-		gotoxy(2 * (pX + x), pY + y);
+		gotoxy(2*(pX + x), pY + y);
 		printf("@@");
 		pX += x;
 		pY += y;
@@ -757,7 +592,7 @@ int move(int moveObject, int mappos, int x, int y)
 			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
-				pX = 14, pY = 2;
+				pX = 14, pY = 28;
 				moveNewMap = 1;
 			}
 			else
@@ -769,7 +604,7 @@ int move(int moveObject, int mappos, int x, int y)
 			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
-				pX = 14, pY = 28;
+				pX = 14, pY = 2;
 				moveNewMap = 1;
 			}
 			else
@@ -803,10 +638,96 @@ int move(int moveObject, int mappos, int x, int y)
 		{
 			maps[newmappos][pX][pY] = PLAYER;
 			drawMap(newmappos);
-			drawMiniMap(newmappos);
 			return newmappos;
 		}
 	}
+	else if (t == 3)
+	{
+		maps[mappos][pX + x][pY + y] = '0';
+		if (object == WATER)
+		{
+			pWater = 10;
+		}
+		else if (object == FOOD)
+		{
+			pFood = 10;
+		}
+		else if (object == MEDICKIT)
+			pHealth += 2;
+		setColor(white, black);
+		gotoxy(2 * pX, pY);
+		printf("  ");
+
+		setColor(cyan, black);
+		gotoxy(2 * (pX + x), pY + y);
+		printf("@@");
+		pX += x;
+		pY += y;
+	}
 	return mappos;
 
+
+}
+void drawUI(int pX, int pY, int pHealth, int pFood, int pWater)
+{
+	int i;
+	setColor(red, black);
+	gotoxy(34, 30);
+	printf(" H P  〔");
+	for (i = 0; i < pHealth; i++) {
+		printf("♥");
+	}
+	for (i = 0; i < 10 - pHealth; i++) {
+		printf("♡");
+	}
+	printf("〕");
+
+	setColor(brown, black);
+	gotoxy(34, 31);
+	printf("Hunger〔");
+	for (i = 0; i < pFood; i++) {
+		printf("♣");
+	}
+	for (i = 0; i < 10 - pFood; i++) {
+		printf("♧");
+	}
+	printf("〕");
+
+	setColor(blue, black);
+	gotoxy(34, 32);
+	printf("Water 〔");
+	for (i = 0; i < pWater; i++) {
+		printf("●");
+	}
+	for (i = 0; i < 10 - pWater; i++) {
+		printf("○");
+	}
+	printf("〕");
+}
+
+void drawStart()
+{
+	int i;
+	char string_s[10] = {'=','=','S','T','A','R','T','=','=' };
+	setColor(white, black);
+	gotoxy(31, 10);
+	printf("%c", string_s[4]);
+	for (i = 3; i >= 0; i--)
+	{
+		gotoxy(31 - (4 - i), 10);
+		printf("%c", string_s[i]);
+		gotoxy(31 + (6 - i - 2), 10);
+		printf("%c", string_s[8 - i]);
+		Sleep(500);
+	}
+	for (i = 0; i <= 3; i++)
+	{
+		gotoxy(27+i, 10);
+		printf(" ");
+		gotoxy(35 - i, 10);
+		printf(" ");
+		Sleep(300);
+	}
+	gotoxy(31, 10);
+	printf(" ");
 }
