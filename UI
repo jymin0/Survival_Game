@@ -1,0 +1,12 @@
+void drawUI(int pX, int pY, int pHealth);
+
+void drawUI(int pX, int pY, int pHealth)
+{
+	int i;
+	setColor(red, black);
+	gotoxy(50, 30);
+	printf("HP: ");
+	for (i = 0; i < pHealth; i++) {
+		printf("♥", pHealth);
+	}
+}
