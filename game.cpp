@@ -47,8 +47,8 @@ enum {
 	yellow,
 	white
 };
-char maps[MAPSIZE][32][32];
-char defaultmap[32][32] = {
+char maps[MAPSIZE][60][60];
+char defaultmap[60][60] = {
 	// 0: 빈공간, 1: 벽, *; 문, #: 벽(문o), @: 벽(문x), +:표시선
 	// 게임 내 공간 [2][2]~[29][29], 정중앙 [15][15]
 	{"0000000000000#***#0000000000000"},
@@ -103,6 +103,7 @@ void creatmap();
 void drawMap(int);
 int mobile(char);
 int move(int, int, int, int);
+void drawUI(int pX, int pY, int pHealth, int pFood, int pWater);
 
 // main function
 int main()
@@ -129,13 +130,17 @@ int main()
 			}
 			_getch();
 			drawMap(0);
-			int mKey;
+			int mHealth;
 			int playing = 1;
 			int mappos = 0;
+			int pHealth = 10;
+			int pFood = 10;
+			int pWater = 10;
+			drawUI(pX, pY, pHealth, pFood, pWater);
 			while (playing)
 			{
-				mKey = keyControl();
-				switch (mKey)
+				mHealth = keyControl();
+				switch (mHealth)
 				{
 				case UP:
 					mappos = move(PLAYER, mappos, 0, -1);
@@ -204,28 +209,30 @@ void setColor(int forground, int background)
 }
 void titleDraw()
 {
+	setColor(white, black);
 	printf("\n\n\n\n"); // 맨위에 4칸 개행  
-	printf("    00OOOOOOOOOOO000000000000000000O000000000000000O000                                   \n");
-	printf("    0           O     OOOOOOOOOOO  O    OOOOOOOOO  O  0                                   \n");
-	printf("    0           O          O       O    O       O  O  0                                   \n");
-	printf("    0OOOOOOOOOOOOO        O O      O    O       O  O  0                                   \n");
-	printf("    0      O             O   O     O    O       O  OOOO                                   \n");
-	printf("    0OOOOO0 OOOOO       O     O    O    O       O  O  0                                   \n");
-	printf("    0     0 O   O      O       O   O    O       O  O  0                                   \n");
-	printf("    0OOOOOO O   O     O         O  O    OOOOOOOOO  O  0                                   \n");
-	printf("    0O      O   O                  O               O  0                                   \n");
-	printf("    0OOOOOO0OOOOO000000000000000000O000000000000000O000                                   \n");
+	printf("   ■■■■■■■    ■■■■■■■  ■   ■■■■■■  ■    \n");
+	printf("               ■          ■        ■   ■        ■  ■    \n");
+	printf("               ■         ■■       ■   ■ ㅡ  ㅡ ■  ■    \n");
+	printf(" ■■■■■■■■■      ■  ■      ■   ■  ⊙⊙  ■  ■    \n");
+	printf("         ■             ■    ■     ■   ■        ■  ■■  \n");
+	printf("   ■■■■■■■      ■      ■    ■   ■        ■  ■    \n");
+	printf("         ■    ■     ■        ■   ■   ■ ○  ○ ■  ■    \n");
+	printf("   ■■■■    ■    ■          ■  ■   ■        ■  ■    \n");
+	printf("   ■    ■    ■   ■            ■ ■   ■    ▽  ■  ■    \n");
+	printf("   ■■■■■■■  ■              ■■   ■■■■■■  ■    \n");
+	printf("                                                              \n");
 }
 int menuDraw()
 {
 	int x = 24;
 	int y = 12;
 	gotoxy(x - 2, y); // -2 한 이유는 > 를 출력해야하기 때문에  
-	printf("> 게임시작");
+	printf("☞ 게임시작");
 	gotoxy(x, y + 1);
-	printf("게임정보");
+	printf(" 게임정보");
 	gotoxy(x, y + 2);
-	printf("  종료  ");
+	printf("   종료  ");
 	while (1) { // 무한반복  
 		int n = keyControl(); // 키보드 이벤트를 키값으로 받아오기  
 		switch (n) {
@@ -234,7 +241,7 @@ int menuDraw()
 				gotoxy(x - 2, y); // x-2 하는 이유는 ">"를 두칸 이전에 출력하기위해  
 				printf(" "); // 원래 위치를 지우고  
 				gotoxy(x - 2, --y); // 새로 이동한 위치로 이동하여  
-				printf(">"); // 다시 그리기  
+				printf("☞"); // 다시 그리기  
 			}
 			break;
 		}
@@ -244,7 +251,7 @@ int menuDraw()
 				gotoxy(x - 2, y);
 				printf(" ");
 				gotoxy(x - 2, ++y);
-				printf(">");
+				printf("☞");
 			}
 			break;
 		}
@@ -550,4 +557,31 @@ int move(int moveObject, int mappos, int x, int y)
 	}
 	return mappos;
 
+}
+void drawUI(int pX, int pY, int pHealth, int pFood, int pWater)
+{
+	int i;
+	setColor(red, black);
+	gotoxy(34, 30);
+	printf(" H P  〔");
+	for (i = 0; i < pHealth; i++) {
+		printf("♥");
+	}
+	printf("〕");
+
+	setColor(brown, black);
+	gotoxy(34, 31);
+	printf("Hunger〔");
+	for (i = 0; i < pFood; i++) {
+		printf("♣");
+	}
+	printf("〕");
+
+	setColor(blue, black);
+	gotoxy(34, 32);
+	printf("Water 〔");
+	for (i = 0; i < pWater; i++) {
+		printf("●");
+	}
+	printf("〕");
 }
