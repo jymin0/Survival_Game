@@ -10,7 +10,7 @@
 #define DOWN 1
 #define LEFT 2
 #define RIGHT 3
-#define SUBMIT 4 // ¼±ÅÃ(½ºÆäÀÌ½º¹Ù)
+#define SUBMIT 4 // ì„ íƒ(ìŠ¤íŽ˜ì´ìŠ¤ë°”)
 
 #define WALL '1'
 #define DOORWALL '#'
@@ -50,8 +50,8 @@ enum {
 };
 char maps[MAPSIZE][60][60];
 char defaultmap[60][60] = {
-	// 0: ºó°ø°£, 1: º®, *; ¹®, #: º®(¹®o), @: º®(¹®x), +:Ç¥½Ã¼±
-	// °ÔÀÓ ³» °ø°£ [2][2]~[29][29], Á¤Áß¾Ó [15][15]
+	// 0: ë¹ˆê³µê°„, 1: ë²½, *; ë¬¸, #: ë²½(ë¬¸o), @: ë²½(ë¬¸x), +:í‘œì‹œì„ 
+	// ê²Œìž„ ë‚´ ê³µê°„ [2][2]~[29][29], ì •ì¤‘ì•™ [15][15]
 	{"0000000000000#***#0000000000000"},
 	{"0111111111111#@@@#1111111111110"},
 	{"0100000000000000000000000000010"},
@@ -268,62 +268,62 @@ void gotoxy(int x, int y)
 }
 void setColor(int forground, int background)
 {
-	HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE); // ÄÜ¼Ö ÇÚµé°¡Á®¿À±â 
+	HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE); // ì½˜ì†” í•¸ë“¤ê°€ì ¸ì˜¤ê¸° 
 	int code = forground + background * 16;
 	SetConsoleTextAttribute(consoleHandle, code);
 }
 void titleDraw()
 {
 	setColor(white, black);
-	printf("\n\n\n\n"); // ¸ÇÀ§¿¡ 4Ä­ °³Çà  
-	printf("   ¡á¡á¡á¡á¡á¡á¡á    ¡á¡á¡á¡á¡á¡á¡á  ¡á   ¡á¡á¡á¡á¡á¡á  ¡á    \n");
-	printf("               ¡á          ¡á        ¡á   ¡á        ¡á  ¡á    \n");
-	printf("               ¡á         ¡á¡á       ¡á   ¡á ¡Ü  ¡Ü ¡á  ¡á    \n");
-	printf(" ¡á¡á¡á¡á¡á¡á¡á¡á¡á      ¡á  ¡á      ¡á   ¡á        ¡á  ¡á    \n");
-	printf("         ¡á             ¡á    ¡á     ¡á   ¡á        ¡á  ¡á¡á  \n");
-	printf("   ¡á¡á¡á¡á¡á¡á¡á      ¡á      ¡á    ¡á   ¡á        ¡á  ¡á    \n");
-	printf("         ¡á    ¡á     ¡á        ¡á   ¡á   ¡á        ¡á  ¡á    \n");
-	printf("   ¡á¡á¡á¡á    ¡á    ¡á          ¡á  ¡á   ¡á        ¡á  ¡á    \n");
-	printf("   ¡á    ¡á    ¡á   ¡á            ¡á ¡á   ¡á   ¡å   ¡á  ¡á    \n");
-	printf("   ¡á¡á¡á¡á¡á¡á¡á  ¡á              ¡á¡á   ¡á¡á¡á¡á¡á¡á  ¡á    \n");
+	printf("\n\n\n\n"); // ë§¨ìœ„ì— 4ì¹¸ ê°œí–‰  
+	printf("   â– â– â– â– â– â– â–     â– â– â– â– â– â– â–   â–    â– â– â– â– â– â–   â–     \n");
+	printf("               â–           â–         â–    â–         â–   â–     \n");
+	printf("               â–          â– â–        â–    â–  â—  â— â–   â–     \n");
+	printf(" â– â– â– â– â– â– â– â– â–       â–   â–       â–    â–         â–   â–     \n");
+	printf("         â–              â–     â–      â–    â–         â–   â– â–   \n");
+	printf("   â– â– â– â– â– â– â–       â–       â–     â–    â–         â–   â–     \n");
+	printf("         â–     â–      â–         â–    â–    â–         â–   â–     \n");
+	printf("   â– â– â– â–     â–     â–           â–   â–    â–         â–   â–     \n");
+	printf("   â–     â–     â–    â–             â–  â–    â–    â–¼   â–   â–     \n");
+	printf("   â– â– â– â– â– â– â–   â–               â– â–    â– â– â– â– â– â–   â–     \n");
 	printf("                                                              \n");
 }
 int menuDraw()
 {
 	int x = 24;
 	int y = 12;
-	gotoxy(x - 2, y); // -2 ÇÑ ÀÌÀ¯´Â > ¸¦ Ãâ·ÂÇØ¾ßÇÏ±â ¶§¹®¿¡  
-	printf("¢Ñ °ÔÀÓ½ÃÀÛ");
+	gotoxy(x - 2, y); // -2 í•œ ì´ìœ ëŠ” > ë¥¼ ì¶œë ¥í•´ì•¼í•˜ê¸° ë•Œë¬¸ì—  
+	printf("â˜ž ê²Œìž„ì‹œìž‘");
 	gotoxy(x, y + 1);
-	printf(" °ÔÀÓÁ¤º¸");
+	printf(" ê²Œìž„ì •ë³´");
 	gotoxy(x, y + 2);
-	printf("   Á¾·á  ");
-	while (1) { // ¹«ÇÑ¹Ýº¹  
-		int n = keyControl(); // Å°º¸µå ÀÌº¥Æ®¸¦ Å°°ªÀ¸·Î ¹Þ¾Æ¿À±â  
+	printf("   ì¢…ë£Œ  ");
+	while (1) { // ë¬´í•œë°˜ë³µ  
+		int n = keyControl(); // í‚¤ë³´ë“œ ì´ë²¤íŠ¸ë¥¼ í‚¤ê°’ìœ¼ë¡œ ë°›ì•„ì˜¤ê¸°  
 		switch (n) {
-		case UP: { // ÀÔ·ÂµÈ Å°ÀÇ °ªÀÌ UPÀÎ°æ¿ì (w) 
-			if (y > 12) { // y´Â 12~14±îÁö¸¸ ÀÌµ¿  
-				gotoxy(x - 2, y); // x-2 ÇÏ´Â ÀÌÀ¯´Â ">"¸¦ µÎÄ­ ÀÌÀü¿¡ Ãâ·ÂÇÏ±âÀ§ÇØ  
-				printf(" "); // ¿ø·¡ À§Ä¡¸¦ Áö¿ì°í  
-				gotoxy(x - 2, --y); // »õ·Î ÀÌµ¿ÇÑ À§Ä¡·Î ÀÌµ¿ÇÏ¿©  
-				printf("¢Ñ"); // ´Ù½Ã ±×¸®±â  
+		case UP: { // ìž…ë ¥ëœ í‚¤ì˜ ê°’ì´ UPì¸ê²½ìš° (w) 
+			if (y > 12) { // yëŠ” 12~14ê¹Œì§€ë§Œ ì´ë™  
+				gotoxy(x - 2, y); // x-2 í•˜ëŠ” ì´ìœ ëŠ” ">"ë¥¼ ë‘ì¹¸ ì´ì „ì— ì¶œë ¥í•˜ê¸°ìœ„í•´  
+				printf(" "); // ì›ëž˜ ìœ„ì¹˜ë¥¼ ì§€ìš°ê³   
+				gotoxy(x - 2, --y); // ìƒˆë¡œ ì´ë™í•œ ìœ„ì¹˜ë¡œ ì´ë™í•˜ì—¬  
+				printf("â˜ž"); // ë‹¤ì‹œ ê·¸ë¦¬ê¸°  
 			}
 			break;
 		}
 
-		case DOWN: { // ÀÔ·ÂµÈ Å°ÀÇ °ªÀÌ DOWNÀÎ°æ¿ì (s) 
-			if (y < 14) { // ÃÖ´ë 14  
+		case DOWN: { // ìž…ë ¥ëœ í‚¤ì˜ ê°’ì´ DOWNì¸ê²½ìš° (s) 
+			if (y < 14) { // ìµœëŒ€ 14  
 				gotoxy(x - 2, y);
 				printf(" ");
 				gotoxy(x - 2, ++y);
-				printf("¢Ñ");
+				printf("â˜ž");
 			}
 			break;
 		}
 
 		case SUBMIT: {
-			return y - 12; // ½ºÆäÀÌ½º¹Ù(¼±ÅÃ)µÇ¾úÀ» °æ¿ì y-12
-			// y ½ÃÀÛ À§Ä¡°¡ 12¿´À¸¹Ç·Î y-12 ¸¦ ÇÏ¸é 0, 1, 2 ¼¼ ¼ýÀÚ¸¦ ¹ÞÀ» ¼ö ÀÖ´Ù. 
+			return y - 12; // ìŠ¤íŽ˜ì´ìŠ¤ë°”(ì„ íƒ)ë˜ì—ˆì„ ê²½ìš° y-12
+			// y ì‹œìž‘ ìœ„ì¹˜ê°€ 12ì˜€ìœ¼ë¯€ë¡œ y-12 ë¥¼ í•˜ë©´ 0, 1, 2 ì„¸ ìˆ«ìžë¥¼ ë°›ì„ ìˆ˜ ìžˆë‹¤. 
 		}
 		}
 	}
@@ -348,19 +348,19 @@ int keyControl() {
 		return RIGHT;
 	}
 	else if (temp == ' ')
-	{ // ½ºÆäÀÌ½º¹Ù(°ø¹é)ÀÌ ¼±ÅÃ ¹öÆ°  
+	{ // ìŠ¤íŽ˜ì´ìŠ¤ë°”(ê³µë°±)ì´ ì„ íƒ ë²„íŠ¼  
 		return SUBMIT;
 	}
 }
 void infoDraw()
 {
-	system("cls"); // È­¸é ¸ðµÎ Áö¿ì±â  
+	system("cls"); // í™”ë©´ ëª¨ë‘ ì§€ìš°ê¸°  
 	printf("\n\n");
-	printf("                        [ Á¶ÀÛ¹ý ]\n\n");
-	printf("                      ÀÌµ¿: W, A, S, D\n");
-	printf("                      ¼±ÅÃ: ½ºÆäÀÌ½º¹Ù\n\n\n\n\n");
-	printf("              °³¹ßÀÚ: jyoh5005, yandusty, jymin0\n");
-	printf("         ½ºÆäÀÌ½º¹Ù¸¦ ´©¸£¸é ¸ÞÀÎÈ­¸éÀ¸·Î ÀÌµ¿ÇÕ´Ï´Ù.");
+	printf("                        [ ì¡°ìž‘ë²• ]\n\n");
+	printf("                      ì´ë™: W, A, S, D\n");
+	printf("                      ì„ íƒ: ìŠ¤íŽ˜ì´ìŠ¤ë°”\n\n\n\n\n");
+	printf("              ê°œë°œìž: jyoh5005, yandusty, jymin0\n");
+	printf("         ìŠ¤íŽ˜ì´ìŠ¤ë°”ë¥¼ ëˆ„ë¥´ë©´ ë©”ì¸í™”ë©´ìœ¼ë¡œ ì´ë™í•©ë‹ˆë‹¤.");
 
 	while (1) {
 		if (keyControl() == SUBMIT) {
@@ -374,7 +374,7 @@ void creatmap()
 	int index = 0, moveMap = 0;
 	memcpy(infomap, reset, sizeof(reset));
 	memcpy(maps[index], defaultmap, sizeof(defaultmap));
-	// ÃÊ±â ¸Ê ¼³Á¤
+	// ì´ˆê¸° ë§µ ì„¤ì •
 	pX = 20;
 	pY = 20;
 	maps[0][20][20] = PLAYER;
@@ -475,7 +475,7 @@ void drawMap(int pos)
 			}
 			else if (temp == PLAYER)
 			{
-				//ÇÃ·¹ÀÌ¾î X,Y À§Ä¡ ÀúÀå
+				//í”Œë ˆì´ì–´ X,Y ìœ„ì¹˜ ì €ìž¥
 				setColor(cyan, black);
 				printf("@@");
 			}
@@ -657,34 +657,34 @@ void drawUI(int pX, int pY, int pHealth, int pFood, int pWater)
 	int i;
 	setColor(red, black);
 	gotoxy(34, 30);
-	printf(" H P  ¡²");
+	printf(" H P  ã€”");
 	for (i = 0; i < pHealth; i++) {
-		printf("¢¾");
+		printf("â™¥");
 	}
 	for (i = 0; i < 10 - pHealth; i++) {
-		printf("¢½");
+		printf("â™¡");
 	}
-	printf("¡³");
+	printf("ã€•");
 
 	setColor(brown, black);
 	gotoxy(34, 31);
-	printf("Hunger¡²");
+	printf("Hungerã€”");
 	for (i = 0; i < pFood; i++) {
-		printf("¢À");
+		printf("â™£");
 	}
 	for (i = 0; i < 10 - pFood; i++) {
-		printf("¢¿");
+		printf("â™§");
 	}
-	printf("¡³");
+	printf("ã€•");
 
 	setColor(blue, black);
 	gotoxy(34, 32);
-	printf("Water ¡²");
+	printf("Water ã€”");
 	for (i = 0; i < pWater; i++) {
-		printf("¡Ü");
+		printf("â—");
 	}
 	for (i = 0; i < 10 - pWater; i++) {
-		printf("¡Û");
+		printf("â—‹");
 	}
-	printf("¡³");
+	printf("ã€•");
 }
