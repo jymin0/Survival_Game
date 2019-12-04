@@ -19,6 +19,7 @@
 #define FOOD '4'
 #define DOOR '*'
 #define NEXT 'N'
+#define MONSTER '5'
 
 #define EAST 0
 #define WAST 1
@@ -92,6 +93,7 @@ int resetminimap[MAPSIZE][2] = { 0 };
 
 int pX = 0;
 int pY = 0;
+int list_MON[20][3] = { {0} };
 
 // funcions list
 void init();
@@ -109,6 +111,7 @@ void drawMap(int);
 void drawMiniMap(int);
 int mobile(char);
 int move(int, int, int, int);
+void MONSTER_create_check(char*, int list_MON[20][3], int, int*);
 
 // main function
 int main()
@@ -118,6 +121,7 @@ int main()
 	init();
 	while (1)
 	{
+		list_MON[20][3] = 0;
 		titleDraw();
 		menuCode = menuDraw();
 		if (menuCode == 0)
@@ -298,6 +302,7 @@ void infoDraw()
 }
 void creatmap()
 {
+	int mob_num = 0;
 	int h = 0, w = 0;
 	srand(rand());
 	int index = 0, moveMap = 0;
@@ -373,8 +378,8 @@ void creatmap()
 			}
 		}
 
-		int i, fooditem = 0, wateritem = 0;
-		fooditem = rand() % 5, wateritem = rand() % 5;
+		int i, fooditem = 0, wateritem = 0, monster = 0;
+		fooditem = rand() % 5, wateritem = rand() % 5, monster = rand() % 3;
 		for (i = 0; i < fooditem; i++)
 		{
 			randomObjectMaking(FOOD, (char*)maps[index]);
@@ -382,6 +387,10 @@ void creatmap()
 		for (i = 0; i < fooditem; i++)
 		{
 			randomObjectMaking(WATER, (char*)maps[index]);
+		}
+		for (i = 0; i < monster; i++)
+		{
+			MONSTER_create_check((char*)maps[index], list_MON, index, &mob_num);
 		}
 	}
 	int next = 1 + rand() % (MAPSIZE - 1);
@@ -509,6 +518,28 @@ void checkrotatemap(int index)
 		}
 	}
 }
+
+void MONSTER_create_check(char* map, int list_MON[20][3], int mappos, int* mob_num)
+{
+	int posx, posy;
+	while (1)
+	{
+		srand(rand());
+		posx = 2 + rand() % 28;
+		posy = 2 + rand() % 28;
+		char* p = map + posx * 32;
+		if (p[posy] == '0')
+		{
+			list_MON[*mob_num][0] = mappos;
+			list_MON[*mob_num][1] = posx;
+			list_MON[*mob_num][2] = posy;
+			p[posy] = MONSTER;
+			*mob_num += 1;
+			break;
+		}
+	}
+}
+
 void creatminimap()
 {
 	memcpy(minimap, resetminimap, sizeof(resetminimap));
@@ -520,7 +551,7 @@ void creatminimap()
 	if (infomap[0][WAST] != -1)
 		minimap[(infomap[0][WAST])][0]--, mapNumber[(infomap[0][WAST])] = 1, stop++;
 	if (infomap[0][SOUTH] != -1)
-		minimap[(infomap[0][SOUTH])][1]--, mapNumber[(infomap[0][SOUTH])] = 1, stop++;	
+		minimap[(infomap[0][SOUTH])][1]--, mapNumber[(infomap[0][SOUTH])] = 1, stop++;
 	if (infomap[0][NORTH] != -1)
 		minimap[(infomap[0][NORTH])][1]++, mapNumber[(infomap[0][NORTH])] = 1, stop++;
 	while (1)
@@ -584,7 +615,7 @@ void creatminimap()
 			}
 		}
 	}
-	
+
 
 }
 void randomObjectMaking(char object, char* map)
@@ -637,6 +668,11 @@ void drawMap(int pos)
 			{
 				setColor(black, lightgreen);
 				printf("FF");
+			}
+			else if (temp == MONSTER)
+			{
+				setColor(white, red);
+				printf("MM");
 			}
 			else if (temp == NEXT)
 			{
@@ -715,6 +751,7 @@ int mobile(char object)
 	case PLAYER:
 	case FOOD:
 	case WATER:
+	case MONSTER:
 		return 0;
 	case NEXT:
 		return 'N';
@@ -811,5 +848,27 @@ int move(int moveObject, int mappos, int x, int y)
 		return 'N';
 	}
 	return mappos;
-
 }
+
+/*void monster_move(int moveObject, int mappos)
+{
+	srand(rand());
+	int x = rand()
+		char object = maps[mappos][pX + x][pY + y];
+	int t = mobile(object);
+	if (t == 1)
+	{
+		//maps[mappos][pX + x][pY + y] == object;
+		maps[mappos][pX][pY] = '0';
+
+		setColor(white, black);
+		gotoxy(2 * pX, pY);
+		printf("  ");
+
+		setColor(cyan, black);
+		gotoxy(2 * (pX + x), pY + y);
+		printf("@@");
+		pX += x;
+		pY += y;
+	}
+}*/ //작업해야할것 복붙함. 앞으로 이거 기반으로 작업하자!! 
