@@ -1,0 +1,17 @@
+void drawUI(int pX, int pY, int pHealth, int pFood)
+{
+	int i;
+	setColor(red, black);
+	gotoxy(34, 30);
+	printf("HP: ");
+	for (i = 0; i < pHealth; i++) {
+		printf("♥");
+	}
+	printf("");
+	setColor(brown, black);
+	gotoxy(34, 31);
+	printf("Hunger: ");
+	for (i = 0; i < pFood; i++) {
+		printf("♣");
+	}
+}
