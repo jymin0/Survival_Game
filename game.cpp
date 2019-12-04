@@ -18,6 +18,7 @@
 #define WATER '3'
 #define FOOD '4'
 #define DOOR '*'
+#define MEDICKIT '+'
 
 #define EAST 0
 #define WAST 1
@@ -89,6 +90,9 @@ int reset[MAPSIZE][6];
 
 int pX = 0;
 int pY = 0;
+int pHealth = 10;
+int pFood = 10;
+int pWater = 10;
 
 // funcions list
 void init();
@@ -97,7 +101,7 @@ void setColor(int, int);
 void titleDraw();
 int menuDraw();
 int keyControl();
-void infoDraw();
+void infoDraw(); 
 void randomObjectMaking(char, char*);
 void creatmap();
 void drawMap(int);
@@ -110,6 +114,8 @@ int main()
 {
 	srand(time(NULL));
 	int menuCode = -1;
+	int j;
+	char string2[30] = { '-','-','-','-','-','-','-','-','-','-','-','B','y','e',' ','B','y','e','-','-','-','-','-','-','-','-','-','-','-','-' };
 	init();
 	while (1)
 	{
@@ -130,31 +136,86 @@ int main()
 			}
 			_getch();
 			drawMap(0);
-			int mHealth;
+			int mKey;
 			int playing = 1;
 			int mappos = 0;
-			int pHealth = 10;
-			int pFood = 10;
-			int pWater = 10;
-			drawUI(pX, pY, pHealth, pFood, pWater);
+			int cHealth = 0;
+			int cFood = 0;
+			int cWater = 0;
+			char string[10] = { 'G','A','M','E',' ','O','V','E','R'};
+			int i;
 			while (playing)
 			{
-				mHealth = keyControl();
-				switch (mHealth)
+				mKey = keyControl();
+				switch (mKey)
 				{
 				case UP:
 					mappos = move(PLAYER, mappos, 0, -1);
+					cFood++;
+					cWater++;
 					break;
 				case DOWN:
 					mappos = move(PLAYER, mappos, 0, 1);
+					cFood++;
+					cWater++;
 					break;
 				case RIGHT:
 					mappos = move(PLAYER, mappos, 1, 0);
+					cFood++;
+					cWater++;
 					break;
 				case LEFT:
 					mappos = move(PLAYER, mappos, -1, 0);
+					cFood++;
+					cWater++;
 					break;
 				case SUBMIT:
+					playing = 0;
+				}
+				if (cFood % 15 == 0)
+				{
+					if (pFood > 0){
+						if (pWater > 0) {
+							pFood -= 1;
+							if (pHealth < 10) {
+								pHealth += 1;
+							}
+						}
+						else if (pWater == 0) {
+							pFood -= 1;
+						}
+					}
+					else if (pFood == 0) {
+						pHealth -= 1;
+					}
+				}
+				if(cWater % 10 == 0)
+				{
+					if (pWater > 0) {
+						pWater -= 1;
+					}
+					else if (pWater == 0) {
+						pHealth -= 1;
+					}
+				}
+				drawUI(pX, pY, pHealth, pFood, pWater);
+				if (pHealth == 0)
+				{   
+					Sleep(200);
+					setColor(white, black);
+					gotoxy(27, 10);
+					for (i = 0; i < 9; i++) 
+					{
+						printf("%c", string[i]);
+						Sleep(250);
+					}
+					gotoxy(27, 10);
+					for (i = 0; i < 9; i++)
+					{
+						printf(" ");
+						Sleep(250);
+					}
+					Sleep(300);
 					playing = 0;
 				}
 			}
@@ -171,7 +232,11 @@ int main()
 		system("cls");
 	}
 	gotoxy(12, 16);
-	printf("게임이 종료되었습니다!!!");
+	for (j = 0; j < 29; j++)
+	{
+		printf("%c", string2[j]);
+		Sleep(150);
+	}
 	return _getch();
 }
 
@@ -213,13 +278,13 @@ void titleDraw()
 	printf("\n\n\n\n"); // 맨위에 4칸 개행  
 	printf("   ■■■■■■■    ■■■■■■■  ■   ■■■■■■  ■    \n");
 	printf("               ■          ■        ■   ■        ■  ■    \n");
-	printf("               ■         ■■       ■   ■ ㅡ  ㅡ ■  ■    \n");
-	printf(" ■■■■■■■■■      ■  ■      ■   ■  ⊙⊙  ■  ■    \n");
+	printf("               ■         ■■       ■   ■ ●  ● ■  ■    \n");
+	printf(" ■■■■■■■■■      ■  ■      ■   ■        ■  ■    \n");
 	printf("         ■             ■    ■     ■   ■        ■  ■■  \n");
 	printf("   ■■■■■■■      ■      ■    ■   ■        ■  ■    \n");
-	printf("         ■    ■     ■        ■   ■   ■ ○  ○ ■  ■    \n");
+	printf("         ■    ■     ■        ■   ■   ■        ■  ■    \n");
 	printf("   ■■■■    ■    ■          ■  ■   ■        ■  ■    \n");
-	printf("   ■    ■    ■   ■            ■ ■   ■    ▽  ■  ■    \n");
+	printf("   ■    ■    ■   ■            ■ ■   ■   ▼   ■  ■    \n");
 	printf("   ■■■■■■■  ■              ■■   ■■■■■■  ■    \n");
 	printf("                                                              \n");
 }
@@ -289,7 +354,19 @@ int keyControl() {
 }
 void infoDraw()
 {
+	system("cls"); // 화면 모두 지우기  
+	printf("\n\n");
+	printf("                        [ 조작법 ]\n\n");
+	printf("                      이동: W, A, S, D\n");
+	printf("                      선택: 스페이스바\n\n\n\n\n");
+	printf("              개발자: jyoh5005, yandusty, jymin0\n");
+	printf("         스페이스바를 누르면 메인화면으로 이동합니다.");
 
+	while (1) {
+		if (keyControl() == SUBMIT) {
+			break;
+		}
+	}
 }
 void creatmap()
 {
@@ -421,27 +498,27 @@ void drawMap(int pos)
 		setColor(black, black);
 	}
 	setColor(red, red);
-	gotoxy(46, 34);
+	gotoxy(60, 34);
 	printf(" ");
 	setColor(green, green);
 	if (infomap[pos][EAST] != -1)
 	{
-		gotoxy(48, 34);
+		gotoxy(62, 34);
 		printf(" ");
 	}
 	if (infomap[pos][WAST] != -1)
 	{
-		gotoxy(44, 34);
+		gotoxy(58, 34);
 		printf(" ");
 	}
 	if (infomap[pos][SOUTH] != -1)
 	{
-		gotoxy(46, 36);
+		gotoxy(60, 36);
 		printf(" ");
 	}
 	if (infomap[pos][NORTH] != -1)
 	{
-		gotoxy(46, 32);
+		gotoxy(60, 32);
 		printf(" ");
 	}
 	setColor(white, black);
@@ -465,9 +542,11 @@ int mobile(char object)
 	case WALL:
 	case DOORWALL:
 	case PLAYER:
+		return 0;
 	case FOOD:
 	case WATER:
-		return 0;
+	case MEDICKIT:
+		return 3;
 	case '*':
 		return 2;
 	default:
@@ -555,7 +634,22 @@ int move(int moveObject, int mappos, int x, int y)
 			return newmappos;
 		}
 	}
+	else if (t == 3)
+	{
+		maps[mappos][pX + x][pY + y] = '0';
+		if (object == WATER)
+		{
+			pWater = 10;
+		}
+		else if (object == FOOD)
+		{
+			pFood = 10;
+		}
+		else if (object == MEDICKIT)
+			pHealth += 2;
+	}
 	return mappos;
+
 
 }
 void drawUI(int pX, int pY, int pHealth, int pFood, int pWater)
@@ -567,6 +661,9 @@ void drawUI(int pX, int pY, int pHealth, int pFood, int pWater)
 	for (i = 0; i < pHealth; i++) {
 		printf("♥");
 	}
+	for (i = 0; i < 10 - pHealth; i++) {
+		printf("♡");
+	}
 	printf("〕");
 
 	setColor(brown, black);
@@ -575,6 +672,9 @@ void drawUI(int pX, int pY, int pHealth, int pFood, int pWater)
 	for (i = 0; i < pFood; i++) {
 		printf("♣");
 	}
+	for (i = 0; i < 10 - pFood; i++) {
+		printf("♧");
+	}
 	printf("〕");
 
 	setColor(blue, black);
@@ -582,6 +682,9 @@ void drawUI(int pX, int pY, int pHealth, int pFood, int pWater)
 	printf("Water 〔");
 	for (i = 0; i < pWater; i++) {
 		printf("●");
+	}
+	for (i = 0; i < 10 - pWater; i++) {
+		printf("○");
 	}
 	printf("〕");
 }
