@@ -1,4 +1,3 @@
-// #include
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
@@ -18,7 +17,7 @@
 #define WATER '3'
 #define FOOD '4'
 #define DOOR '*'
-#define MEDICKIT '+'
+#define MONSTER '5'
 
 #define EAST 0
 #define WAST 1
@@ -48,8 +47,8 @@ enum {
 	yellow,
 	white
 };
-char maps[MAPSIZE][60][60];
-char defaultmap[60][60] = {
+char maps[MAPSIZE][32][32];
+char defaultmap[32][32] = {
 	// 0: 빈공간, 1: 벽, *; 문, #: 벽(문o), @: 벽(문x), +:표시선
 	// 게임 내 공간 [2][2]~[29][29], 정중앙 [15][15]
 	{"0000000000000#***#0000000000000"},
@@ -90,9 +89,8 @@ int reset[MAPSIZE][6];
 
 int pX = 0;
 int pY = 0;
-int pHealth = 10;
-int pFood = 10;
-int pWater = 10;
+
+
 
 // funcions list
 void init();
@@ -101,25 +99,26 @@ void setColor(int, int);
 void titleDraw();
 int menuDraw();
 int keyControl();
-void infoDraw(); 
+void infoDraw();
 void randomObjectMaking(char, char*);
+void MONSTER_create_check(char* , int list_MON[20][3],int,int*);
 void creatmap();
 void drawMap(int);
 int mobile(char);
 int move(int, int, int, int);
-void drawUI(int pX, int pY, int pHealth, int pFood, int pWater);
-void drawStart();
+int list_MON[20][3] = {{0}} ;//몬스터를 체크할 리스트 생성 해봣자 최대 20마리 생성 할것 같으니 자리를 남게 설정할예정.
+void print_MONLIST(int list_MON[20][3]);
 
 // main function
 int main()
 {
+
 	srand(time(NULL));
 	int menuCode = -1;
-	int j;
-	char string2[30] = { '-','-','-','-','-','-','-','-','-','-','-','B','y','e',' ','B','y','e','-','-','-','-','-','-','-','-','-','-','-','-' };
 	init();
 	while (1)
 	{
+		list_MON[20][3] = 0 ;
 		titleDraw();
 		menuCode = menuDraw();
 		if (menuCode == 0)
@@ -136,20 +135,10 @@ int main()
 				printf("NORTH= %d, ", infomap[x][NORTH]);
 			}
 			_getch();
-	
 			drawMap(0);
-			drawStart();
-			setColor(white, black);
-			gotoxy(28, 10);
-			Sleep(300);
 			int mKey;
 			int playing = 1;
 			int mappos = 0;
-			int cHealth = 0;
-			int cFood = 0;
-			int cWater = 0;
-			int i;
-			char string[10] = { 'G','A','M','E',' ','O','V','E','R'};
 			while (playing)
 			{
 				mKey = keyControl();
@@ -157,74 +146,22 @@ int main()
 				{
 				case UP:
 					mappos = move(PLAYER, mappos, 0, -1);
-					cFood++;
-					cWater++;
 					break;
 				case DOWN:
 					mappos = move(PLAYER, mappos, 0, 1);
-					cFood++;
-					cWater++;
 					break;
 				case RIGHT:
 					mappos = move(PLAYER, mappos, 1, 0);
-					cFood++;
-					cWater++;
 					break;
 				case LEFT:
 					mappos = move(PLAYER, mappos, -1, 0);
-					cFood++;
-					cWater++;
 					break;
 				case SUBMIT:
 					playing = 0;
 				}
-				if (cFood % 15 == 0)
-				{
-					if (pFood > 0){
-						if (pWater > 0) {
-							pFood -= 1;
-							if (pHealth < 10) {
-								pHealth += 1;
-							}
-						}
-						else if (pWater == 0) {
-							pFood -= 1;
-						}
-					}
-					else if (pFood == 0) {
-						pHealth -= 1;
-					}
-				}
-				if(cWater % 10 == 0)
-				{
-					if (pWater > 0) {
-						pWater -= 1;
-					}
-					else if (pWater == 0) {
-						pHealth -= 1;
-					}
-				}
-				drawUI(pX, pY, pHealth, pFood, pWater);
-				if (pHealth == 0)
-				{   
-					Sleep(200);
-					setColor(white, black);
-					gotoxy(27, 10);
-					for (i = 0; i < 9; i++) 
-					{
-						printf("%c", string[i]);
-						Sleep(250);
-					}
-					gotoxy(27, 10);
-					for (i = 0; i < 9; i++)
-					{
-						printf(" ");
-						Sleep(150);
-					}
-					Sleep(300);
-					playing = 0;
-				}
+				
 			}
+			
 		}
 		else if (menuCode == 1)
 		{
@@ -238,11 +175,7 @@ int main()
 		system("cls");
 	}
 	gotoxy(12, 16);
-	for (j = 0; j < 29; j++)
-	{
-		printf("%c", string2[j]);
-		Sleep(150);
-	}
+	printf("게임이 종료되었습니다!!!");
 	return _getch();
 }
 
@@ -280,31 +213,28 @@ void setColor(int forground, int background)
 }
 void titleDraw()
 {
-	setColor(white, black);
-	printf("\n\n\n"); // 맨위에 4칸 개행
-	printf("                                                              \n");
-	printf("   ■■■■■■■    ■■■■■■■  ■   ■■■■■■  ■    \n");
-	printf("               ■          ■        ■   ■        ■  ■    \n");
-	printf("               ■         ■■       ■   ■ ●  ● ■  ■    \n");
-	printf(" ■■■■■■■■■      ■  ■      ■   ■        ■  ■    \n");
-	printf("         ■             ■    ■     ■   ■        ■  ■■  \n");
-	printf("   ■■■■■■■      ■      ■    ■   ■        ■  ■    \n");
-	printf("         ■    ■     ■        ■   ■   ■        ■  ■    \n");
-	printf("   ■■■■    ■    ■          ■  ■   ■        ■  ■    \n");
-	printf("   ■    ■    ■   ■            ■ ■   ■   ▼   ■  ■    \n");
-	printf("   ■■■■■■■  ■              ■■   ■■■■■■  ■    \n");
-	printf("                                                              \n");
+	printf("\n\n\n\n"); // 맨위에 4칸 개행  
+	printf("    00OOOOOOOOOOO000000000000000000O000000000000000O000                                   \n");
+	printf("    0           O     OOOOOOOOOOO  O    OOOOOOOOO  O  0                                   \n");
+	printf("    0           O          O       O    O       O  O  0                                   \n");
+	printf("    0OOOOOOOOOOOOO        O O      O    O       O  O  0                                   \n");
+	printf("    0      O             O   O     O    O       O  OOOO                                   \n");
+	printf("    0OOOOO0 OOOOO       O     O    O    O       O  O  0                                   \n");
+	printf("    0     0 O   O      O       O   O    O       O  O  0                                   \n");
+	printf("    0OOOOOO O   O     O         O  O    OOOOOOOOO  O  0                                   \n");
+	printf("    0O      O   O                  O               O  0                                   \n");
+	printf("    0OOOOOO0OOOOO000000000000000000O000000000000000O000                                   \n");
 }
 int menuDraw()
 {
 	int x = 24;
 	int y = 12;
 	gotoxy(x - 2, y); // -2 한 이유는 > 를 출력해야하기 때문에  
-	printf("☞ 게임시작");
+	printf("> 게임시작");
 	gotoxy(x, y + 1);
-	printf(" 게임정보");
+	printf("게임정보");
 	gotoxy(x, y + 2);
-	printf("   종료  ");
+	printf("  종료  ");
 	while (1) { // 무한반복  
 		int n = keyControl(); // 키보드 이벤트를 키값으로 받아오기  
 		switch (n) {
@@ -313,7 +243,7 @@ int menuDraw()
 				gotoxy(x - 2, y); // x-2 하는 이유는 ">"를 두칸 이전에 출력하기위해  
 				printf(" "); // 원래 위치를 지우고  
 				gotoxy(x - 2, --y); // 새로 이동한 위치로 이동하여  
-				printf("☞"); // 다시 그리기  
+				printf(">"); // 다시 그리기  
 			}
 			break;
 		}
@@ -323,7 +253,7 @@ int menuDraw()
 				gotoxy(x - 2, y);
 				printf(" ");
 				gotoxy(x - 2, ++y);
-				printf("☞");
+				printf(">");
 			}
 			break;
 		}
@@ -361,22 +291,11 @@ int keyControl() {
 }
 void infoDraw()
 {
-	system("cls"); // 화면 모두 지우기  
-	printf("\n\n");
-	printf("                        [ 조작법 ]\n\n");
-	printf("                      이동: W, A, S, D\n");
-	printf("                      선택: 스페이스바\n\n\n\n\n");
-	printf("              개발자: jyoh5005, yandusty, jymin0\n");
-	printf("         스페이스바를 누르면 메인화면으로 이동합니다.");
 
-	while (1) {
-		if (keyControl() == SUBMIT) {
-			break;
-		}
-	}
 }
 void creatmap()
 {
+	int mob_num = 0;
 	srand(rand());
 	int index = 0, moveMap = 0;
 	memcpy(infomap, reset, sizeof(reset));
@@ -428,23 +347,64 @@ void creatmap()
 				}
 			}
 		}
-
-		int i, fooditem = 0, wateritem = 0;
-		fooditem = rand() % 9, wateritem = rand() % 9;
+		int i, fooditem = 0, wateritem = 0, monster = 0;
+		fooditem = rand() % 5, wateritem = rand() % 5, monster = rand() % 3;
 		for (i = 0; i < fooditem; i++)
 		{
 			randomObjectMaking(FOOD, (char*)maps[index]);
 		}
-		for (i = 0; i < fooditem; i++)
+		for (i = 0; i < wateritem; i++)
 		{
 			randomObjectMaking(WATER, (char*)maps[index]);
+		}
+		for (i = 0; i < monster; i++)
+		{
+			MONSTER_create_check((char*)maps[index],list_MON, index, &mob_num);
 		}
 	}
 	//char* changePoint = (char*)&maps + index * 32 * 32;
 
-
+	print_MONLIST(list_MON);
 
 }
+
+
+void MONSTER_create_check(char* map, int list_MON[20][3], int mappos, int* mob_num)
+{
+	int posx, posy;
+	while (1)
+	{
+		srand(rand());
+		posx = 2 + rand() % 28;
+		posy = 2 + rand() % 28;
+		char* p = map + posx * 32;
+		if (p[posy] == '0')
+		{
+			list_MON[*mob_num][0] = mappos;
+			list_MON[*mob_num][1] = posx;
+			list_MON[*mob_num][2] = posy;
+			p[posy] = MONSTER;
+			*mob_num+=1;
+			break;
+		}
+	}
+}
+
+void print_MONLIST(int list_MON[20][3])
+{
+	int a, b;
+	for (a = 0; a < 20; a++)
+	{
+		for (b = 0; b < 3; b++)
+		{
+			printf("%d ", list_MON[a][b]);
+		}
+		printf("\n");
+	}
+	Sleep(10000);
+}
+
+
 void randomObjectMaking(char object, char* map)
 {
 	int posx, posy;
@@ -455,8 +415,10 @@ void randomObjectMaking(char object, char* map)
 		posy = 2 + rand() % 28;
 		char* p = map + posx * 32;
 		if (p[posy] == '0')
+		{
 			p[posy] = object;
-		break;
+			break;
+		}
 	}
 }
 void drawMap(int pos)
@@ -496,6 +458,11 @@ void drawMap(int pos)
 				setColor(black, lightgreen);
 				printf("FF");
 			}
+			else if (temp == MONSTER)
+			{
+				setColor(white, red);
+				printf("MM");
+			}
 			else
 			{
 				setColor(white, white);
@@ -505,42 +472,42 @@ void drawMap(int pos)
 		setColor(black, black);
 	}
 	setColor(red, red);
-	gotoxy(60, 36);
+	gotoxy(46, 34);
 	printf(" ");
 	setColor(green, green);
 	if (infomap[pos][EAST] != -1)
 	{
-		gotoxy(62, 36);
+		gotoxy(48, 34);
 		printf(" ");
 	}
 	if (infomap[pos][WAST] != -1)
 	{
-		gotoxy(58, 36);
+		gotoxy(44, 34);
 		printf(" ");
 	}
 	if (infomap[pos][SOUTH] != -1)
 	{
-		gotoxy(60, 38);
+		gotoxy(46, 36);
 		printf(" ");
 	}
 	if (infomap[pos][NORTH] != -1)
 	{
-		gotoxy(60, 34);
+		gotoxy(46, 32);
 		printf(" ");
 	}
 	setColor(white, black);
-	gotoxy(60, 2);
+	gotoxy(60, 0);
 	printf("pos=%2d ", pos);
-	
-	gotoxy(62, 3);
+
+	gotoxy(62, 1);
 	printf("EAST=%d ", infomap[pos][EAST]);
-	gotoxy(62, 4);
+	gotoxy(62, 2);
 	printf("WAST=%d ", infomap[pos][WAST]);
-	gotoxy(62, 5);
+	gotoxy(62, 3);
 	printf("SOUTH=%d ", infomap[pos][SOUTH]);
-	gotoxy(62, 6);
+	gotoxy(62, 4);
 	printf("NORTH=%d ", infomap[pos][NORTH]);
-	
+
 }
 int mobile(char object)
 {
@@ -549,11 +516,10 @@ int mobile(char object)
 	case WALL:
 	case DOORWALL:
 	case PLAYER:
-		return 0;
 	case FOOD:
 	case WATER:
-	case MEDICKIT:
-		return 3;
+	case MONSTER:
+		return 0;
 	case '*':
 		return 2;
 	default:
@@ -566,17 +532,17 @@ int move(int moveObject, int mappos, int x, int y)
 	printf("%d, %d", pX, pY);
 	char object = maps[mappos][pX + x][pY + y];
 	int t = mobile(object);
-	if (t == 1)
+	if (t == 1) 
 	{
 		//maps[mappos][pX + x][pY + y] == object;
 		maps[mappos][pX][pY] = '0';
 
 		setColor(white, black);
-		gotoxy(2*pX, pY);
+		gotoxy(2 * pX, pY);
 		printf("  ");
 
 		setColor(cyan, black);
-		gotoxy(2*(pX + x), pY + y);
+		gotoxy(2 * (pX + x), pY + y);
 		printf("@@");
 		pX += x;
 		pY += y;
@@ -592,7 +558,7 @@ int move(int moveObject, int mappos, int x, int y)
 			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
-				pX = 14, pY = 28;
+				pX = 14, pY = 2;
 				moveNewMap = 1;
 			}
 			else
@@ -604,7 +570,7 @@ int move(int moveObject, int mappos, int x, int y)
 			if (newmappos != -1)
 			{
 				maps[mappos][pX][pY] = '0';
-				pX = 14, pY = 2;
+				pX = 14, pY = 28;
 				moveNewMap = 1;
 			}
 			else
@@ -641,93 +607,46 @@ int move(int moveObject, int mappos, int x, int y)
 			return newmappos;
 		}
 	}
-	else if (t == 3)
-	{
-		maps[mappos][pX + x][pY + y] = '0';
-		if (object == WATER)
-		{
-			pWater = 10;
-		}
-		else if (object == FOOD)
-		{
-			pFood = 10;
-		}
-		else if (object == MEDICKIT)
-			pHealth += 2;
-		setColor(white, black);
-		gotoxy(2 * pX, pY);
-		printf("  ");
-
-		setColor(cyan, black);
-		gotoxy(2 * (pX + x), pY + y);
-		printf("@@");
-		pX += x;
-		pY += y;
-	}
 	return mappos;
 
-
 }
-void drawUI(int pX, int pY, int pHealth, int pFood, int pWater)
+
+/*void monster_move(int moveObject, int mappos)
 {
-	int i;
-	setColor(red, black);
-	gotoxy(34, 30);
-	printf(" H P  〔");
-	for (i = 0; i < pHealth; i++) {
-		printf("♥");
-	}
-	for (i = 0; i < 10 - pHealth; i++) {
-		printf("♡");
-	}
-	printf("〕");
+	gotoxy(15, 15);
+	int x = rand() % 3 - 3;
+	int y = rand() % 3 - 3;
+	char object = maps[mappos][mX + x][mY + y];
 
-	setColor(brown, black);
-	gotoxy(34, 31);
-	printf("Hunger〔");
-	for (i = 0; i < pFood; i++) {
-		printf("♣");
-	}
-	for (i = 0; i < 10 - pFood; i++) {
-		printf("♧");
-	}
-	printf("〕");
+	int t = mobile(object);
+	if (t == 3) //몬스터도 플레이어 느낌으로 봐야 쉽지 않을까.?
+	{
+		//maps[mappos][pX + x][pY + y] == object;
+		maps[mappos][mX][mY] = '0';
+		setColor(white, black);
+		gotoxy(2 * mX, mY);
+		printf("  ");
 
-	setColor(blue, black);
-	gotoxy(34, 32);
-	printf("Water 〔");
-	for (i = 0; i < pWater; i++) {
-		printf("●");
+		setColor(red, black);
+		gotoxy(2 * (mX + x), mY + y);
+		printf("MM");
+		mX += x;
+		mY += y;
 	}
-	for (i = 0; i < 10 - pWater; i++) {
-		printf("○");
-	}
-	printf("〕");
 }
 
-void drawStart()
+void randomObjectMaking(char object, char* map)
 {
-	int i;
-	char string_s[10] = {'=','=','S','T','A','R','T','=','=' };
-	setColor(white, black);
-	gotoxy(31, 10);
-	printf("%c", string_s[4]);
-	for (i = 3; i >= 0; i--)
+	int posx, posy;
+	while (1)
 	{
-		gotoxy(31 - (4 - i), 10);
-		printf("%c", string_s[i]);
-		gotoxy(31 + (6 - i - 2), 10);
-		printf("%c", string_s[8 - i]);
-		Sleep(500);
+		srand(rand());
+		posx = 2 + rand() % 28;
+		posy = 2 + rand() % 28;
+		char* p = map + posx * 32;
+		if (p[posy] == '0')
+			p[posy] = object;
+		break;
 	}
-	for (i = 0; i <= 3; i++)
-	{
-		gotoxy(27+i, 10);
-		printf(" ");
-		gotoxy(35 - i, 10);
-		printf(" ");
-		Sleep(300);
-	}
-	gotoxy(31, 10);
-	printf(" ");
 }
+*/
