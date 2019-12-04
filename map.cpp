@@ -19,7 +19,6 @@
 #define FOOD '4'
 #define DOOR '*'
 #define NEXT 'N'
-#define MONSTER '5'
 
 #define EAST 0
 #define WAST 1
@@ -93,7 +92,6 @@ int resetminimap[MAPSIZE][2] = { 0 };
 
 int pX = 0;
 int pY = 0;
-int list_MON[20][3] = { {0} };
 
 // funcions list
 void init();
@@ -111,7 +109,6 @@ void drawMap(int);
 void drawMiniMap(int);
 int mobile(char);
 int move(int, int, int, int);
-void MONSTER_create_check(char* map, int list_MON[20][3], int mappos, int* mob_num);
 
 // main function
 int main()
@@ -121,49 +118,45 @@ int main()
 	init();
 	while (1)
 	{
-		list_MON[20][3] = 0;
 		titleDraw();
 		menuCode = menuDraw();
 		if (menuCode == 0)
 		{
-			creatmap();
-			creatminimap();
-			Sleep(500);
-			system("cls");
-			for (int x = 0; x < MAPSIZE; x++)
-			{
-				printf("\n%d\n", x);
-				printf("EAST= %d, ", infomap[x][EAST]);
-				printf("WAST= %d, ", infomap[x][WAST]);
-				printf("SOUTH= %d, ", infomap[x][SOUTH]);
-				printf("NORTH= %d, ", infomap[x][NORTH]);
-				printf("x=%d, y=%d", minimap[x][0], minimap[x][1]);
-			}
-			_getch();
-			drawMap(0);
-			drawMiniMap(0);
-			int mKey;
 			int playing = 1;
-			int mappos = 0;
 			while (playing)
 			{
-				mKey = keyControl();
-				switch (mKey)
+				creatmap();
+				creatminimap();
+				Sleep(500);
+				system("cls");
+				drawMap(0);
+				drawMiniMap(0);
+				int mKey;
+				int mappos = 0;
+				while (playing)
 				{
-				case UP:
-					mappos = move(PLAYER, mappos, 0, -1);
-					break;
-				case DOWN:
-					mappos = move(PLAYER, mappos, 0, 1);
-					break;
-				case RIGHT:
-					mappos = move(PLAYER, mappos, 1, 0);
-					break;
-				case LEFT:
-					mappos = move(PLAYER, mappos, -1, 0);
-					break;
-				case SUBMIT:
-					playing = 0;
+					mKey = keyControl();
+					switch (mKey)
+					{
+					case UP:
+						mappos = move(PLAYER, mappos, 0, -1);
+						break;
+					case DOWN:
+						mappos = move(PLAYER, mappos, 0, 1);
+						break;
+					case RIGHT:
+						mappos = move(PLAYER, mappos, 1, 0);
+						break;
+					case LEFT:
+						mappos = move(PLAYER, mappos, -1, 0);
+						break;
+					case SUBMIT:
+						playing = 0;
+					}
+					if (mappos == 'N')
+					{
+						break;
+					}
 				}
 			}
 		}
@@ -305,7 +298,6 @@ void infoDraw()
 }
 void creatmap()
 {
-	int mob_num = 0;
 	int h = 0, w = 0;
 	srand(rand());
 	int index = 0, moveMap = 0;
@@ -381,8 +373,8 @@ void creatmap()
 			}
 		}
 
-		int i, fooditem = 0, wateritem = 0, monster = 0;
-		fooditem = rand() % 5, wateritem = rand() % 5, monster = rand() % 3;
+		int i, fooditem = 0, wateritem = 0;
+		fooditem = rand() % 5, wateritem = rand() % 5;
 		for (i = 0; i < fooditem; i++)
 		{
 			randomObjectMaking(FOOD, (char*)maps[index]);
@@ -390,10 +382,6 @@ void creatmap()
 		for (i = 0; i < fooditem; i++)
 		{
 			randomObjectMaking(WATER, (char*)maps[index]);
-		}
-		for (i = 0; i < monster; i++)
-		{
-			MONSTER_create_check((char*)maps[index], list_MON, index, &mob_num);
 		}
 	}
 	int next = 1 + rand() % (MAPSIZE - 1);
@@ -532,7 +520,7 @@ void creatminimap()
 	if (infomap[0][WAST] != -1)
 		minimap[(infomap[0][WAST])][0]--, mapNumber[(infomap[0][WAST])] = 1, stop++;
 	if (infomap[0][SOUTH] != -1)
-		minimap[(infomap[0][SOUTH])][1]--, mapNumber[(infomap[0][SOUTH])] = 1, stop++;
+		minimap[(infomap[0][SOUTH])][1]--, mapNumber[(infomap[0][SOUTH])] = 1, stop++;	
 	if (infomap[0][NORTH] != -1)
 		minimap[(infomap[0][NORTH])][1]++, mapNumber[(infomap[0][NORTH])] = 1, stop++;
 	while (1)
@@ -596,30 +584,9 @@ void creatminimap()
 			}
 		}
 	}
+	
+
 }
-
-void MONSTER_create_check(char* map, int list_MON[20][3], int mappos, int* mob_num)
-{
-	int posx, posy;
-	while (1)
-	{
-		srand(rand());
-		posx = 2 + rand() % 28;
-		posy = 2 + rand() % 28;
-		char* p = map + posx * 32;
-		if (p[posy] == '0')
-		{
-			list_MON[*mob_num][0] = mappos;
-			list_MON[*mob_num][1] = posx;
-			list_MON[*mob_num][2] = posy;
-			p[posy] = MONSTER;
-			*mob_num += 1;
-			break;
-		}
-	}
-}
-
-
 void randomObjectMaking(char object, char* map)
 {
 	int posx, posy;
@@ -670,11 +637,6 @@ void drawMap(int pos)
 			{
 				setColor(black, lightgreen);
 				printf("FF");
-			}
-			else if (temp == MONSTER)
-			{
-				setColor(white, red);
-				printf("MM");
 			}
 			else if (temp == NEXT)
 			{
@@ -754,6 +716,8 @@ int mobile(char object)
 	case FOOD:
 	case WATER:
 		return 0;
+	case NEXT:
+		return 'N';
 	case '*':
 		return 2;
 	default:
@@ -842,30 +806,10 @@ int move(int moveObject, int mappos, int x, int y)
 			return newmappos;
 		}
 	}
+	else if (t == 'N')
+	{
+		return 'N';
+	}
 	return mappos;
 
 }
-/*
-void monster_move(int moveObject, int mappos)
-{
-	srand(rand());
-	int x = rand()
-		char object = maps[mappos][pX + x][pY + y];
-	int t = mobile(object);
-	if (t == 1)
-	{
-		//maps[mappos][pX + x][pY + y] == object;
-		maps[mappos][pX][pY] = '0';
-
-		setColor(white, black);
-		gotoxy(2 * pX, pY);
-		printf("  ");
-
-		setColor(cyan, black);
-		gotoxy(2 * (pX + x), pY + y);
-		printf("@@");
-		pX += x;
-		pY += y;
-	}
-}*/
-//작업중인 몬스터 무브 더 작업해야함.
