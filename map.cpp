@@ -1,3 +1,4 @@
+// #include
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
@@ -17,7 +18,7 @@
 #define WATER '3'
 #define FOOD '4'
 #define DOOR '*'
-#define MONSTER '5'
+#define NEXT 'N'
 
 #define EAST 0
 #define WAST 1
@@ -85,12 +86,12 @@ char defaultmap[32][32] = {
 	{"0000000000000#***#0000000000000"},
 };
 int infomap[MAPSIZE][6];
-int reset[MAPSIZE][6];
+int resetmap[MAPSIZE][6];
+int minimap[MAPSIZE][2] = { 0 };
+int resetminimap[MAPSIZE][2] = { 0 };
 
 int pX = 0;
 int pY = 0;
-
-
 
 // funcions list
 void init();
@@ -101,29 +102,28 @@ int menuDraw();
 int keyControl();
 void infoDraw();
 void randomObjectMaking(char, char*);
-void MONSTER_create_check(char* , int list_MON[20][3],int,int*);
 void creatmap();
+void checkrotatemap(int);
+void creatminimap();
 void drawMap(int);
+void drawMiniMap(int);
 int mobile(char);
 int move(int, int, int, int);
-int list_MON[20][3] = {{0}} ;//몬스터를 체크할 리스트 생성 해봣자 최대 20마리 생성 할것 같으니 자리를 남게 설정할예정.
-void print_MONLIST(int list_MON[20][3]);
 
 // main function
 int main()
 {
-
 	srand(time(NULL));
 	int menuCode = -1;
 	init();
 	while (1)
 	{
-		list_MON[20][3] = 0 ;
 		titleDraw();
 		menuCode = menuDraw();
 		if (menuCode == 0)
 		{
 			creatmap();
+			creatminimap();
 			Sleep(500);
 			system("cls");
 			for (int x = 0; x < MAPSIZE; x++)
@@ -133,9 +133,11 @@ int main()
 				printf("WAST= %d, ", infomap[x][WAST]);
 				printf("SOUTH= %d, ", infomap[x][SOUTH]);
 				printf("NORTH= %d, ", infomap[x][NORTH]);
+				printf("x=%d, y=%d", minimap[x][0], minimap[x][1]);
 			}
 			_getch();
 			drawMap(0);
+			drawMiniMap(0);
 			int mKey;
 			int playing = 1;
 			int mappos = 0;
@@ -159,9 +161,7 @@ int main()
 				case SUBMIT:
 					playing = 0;
 				}
-				
 			}
-			
 		}
 		else if (menuCode == 1)
 		{
@@ -176,7 +176,8 @@ int main()
 	}
 	gotoxy(12, 16);
 	printf("게임이 종료되었습니다!!!");
-	return _getch();
+	_getch();
+	return 0;
 }
 
 // function seting
@@ -193,8 +194,13 @@ void init()
 	{
 		for (int y = 0; y < 6; y++)
 		{
-			reset[x][y] = -1;
+			resetmap[x][y] = -1;
 		}
+	}
+	for (int x = 0; x < MAPSIZE; x++)
+	{
+		resetminimap[x][0] = 0;
+		resetminimap[x][1] = 0;
 	}
 }
 void gotoxy(int x, int y)
@@ -295,10 +301,10 @@ void infoDraw()
 }
 void creatmap()
 {
-	int mob_num = 0;
+	int h = 0, w = 0;
 	srand(rand());
 	int index = 0, moveMap = 0;
-	memcpy(infomap, reset, sizeof(reset));
+	memcpy(infomap, resetmap, sizeof(resetmap));
 	memcpy(maps[index], defaultmap, sizeof(defaultmap));
 	// 초기 맵 설정
 	pX = 20;
@@ -322,89 +328,268 @@ void creatmap()
 			}
 			else
 			{
-				find = 0;
 				infomap[mapNumber][moveMap] = index;
-				//infomap[mapNumber][1] += (1 << 3 * moveMap);
 				if (moveMap == EAST)
 				{
-					infomap[index][WAST] = mapNumber;
-					//infomap[index][1] += (1 << 3 * WAST);
+					if (w < 8)
+					{
+						find = 0, w++;
+						infomap[index][WAST] = mapNumber;
+						checkrotatemap(index);
+					}
+					else
+						continue;
 				}
 				if (moveMap == WAST)
 				{
-					infomap[index][EAST] = mapNumber;
-					//infomap[index][1] += (1 << 3 * EAST);
+					if (w < 8)
+					{
+						find = 0, w++;
+						infomap[index][EAST] = mapNumber;
+						checkrotatemap(index);
+					}
+					else
+						continue;
 				}
 				if (moveMap == SOUTH)
 				{
-					infomap[index][NORTH] = mapNumber;
-					//infomap[index][1] += (1 << 3 * NORTH);
+					if (h < 8)
+					{
+						find = 0, h++;
+						infomap[index][NORTH] = mapNumber;
+						checkrotatemap(index);
+					}
+					else
+						continue;
 				}
 				if (moveMap == NORTH)
 				{
-					infomap[index][SOUTH] = mapNumber;
-					//infomap[index][1] += (1 << 3 * SOUTH);
+					if (h < 8)
+					{
+						find = 0, h++;
+						infomap[index][SOUTH] = mapNumber;
+						checkrotatemap(index);
+					}
+					else
+						continue;
 				}
 			}
 		}
-		int i, fooditem = 0, wateritem = 0, monster = 0;
-		fooditem = rand() % 5, wateritem = rand() % 5, monster = rand() % 3;
+
+		int i, fooditem = 0, wateritem = 0;
+		fooditem = rand() % 5, wateritem = rand() % 5;
 		for (i = 0; i < fooditem; i++)
 		{
 			randomObjectMaking(FOOD, (char*)maps[index]);
 		}
-		for (i = 0; i < wateritem; i++)
+		for (i = 0; i < fooditem; i++)
 		{
 			randomObjectMaking(WATER, (char*)maps[index]);
 		}
-		for (i = 0; i < monster; i++)
-		{
-			MONSTER_create_check((char*)maps[index],list_MON, index, &mob_num);
-		}
 	}
-	//char* changePoint = (char*)&maps + index * 32 * 32;
-
-	print_MONLIST(list_MON);
+	int next = 1 + rand() % (MAPSIZE - 1);
+	randomObjectMaking(NEXT, (char*)maps[next]);
+	infomap[next][DOOROPEN] = 1;
 
 }
-
-
-void MONSTER_create_check(char* map, int list_MON[20][3], int mappos, int* mob_num)
+void checkrotatemap(int index)
 {
-	int posx, posy;
+	int E, W, S, N;
+	//EAST
+	S = infomap[index][SOUTH];
+	if (S != -1)
+	{
+		E = infomap[S][EAST];
+		if (E != -1)
+		{
+			N = infomap[E][NORTH];
+			if (N != -1)
+			{
+				infomap[N][WAST] = index;
+				infomap[index][EAST] = N;
+			}
+		}
+	}
+	N = infomap[index][NORTH];
+	if (N != -1)
+	{
+		E = infomap[N][EAST];
+		if (E != -1)
+		{
+			S = infomap[E][SOUTH];
+			if (S != -1)
+			{
+				infomap[S][WAST] = index;
+				infomap[index][EAST] = S;
+			}
+		}
+	}
+	//WAST
+	S = infomap[index][SOUTH];
+	if (S != -1)
+	{
+		W = infomap[S][WAST];
+		if (W != -1)
+		{
+			N = infomap[W][NORTH];
+			if (N != -1)
+			{
+				infomap[N][EAST] = index;
+				infomap[index][WAST] = N;
+			}
+		}
+	}
+	N = infomap[index][NORTH];
+	if (N != -1)
+	{
+		W = infomap[N][WAST];
+		if (W != -1)
+		{
+			S = infomap[W][SOUTH];
+			if (S != -1)
+			{
+				infomap[S][EAST] = index;
+				infomap[index][WAST] = S;
+			}
+		}
+	}
+	//SOUTH
+	E = infomap[index][EAST];
+	if (E != -1)
+	{
+		S = infomap[E][SOUTH];
+		if (S != -1)
+		{
+			W = infomap[S][WAST];
+			if (N != -1)
+			{
+				infomap[W][NORTH] = index;
+				infomap[index][SOUTH] = W;
+			}
+		}
+	}
+	W = infomap[index][WAST];
+	if (W != -1)
+	{
+		S = infomap[W][SOUTH];
+		if (S != -1)
+		{
+			E = infomap[S][EAST];
+			if (E != -1)
+			{
+				infomap[E][NORTH] = index;
+				infomap[index][SOUTH] = E;
+			}
+		}
+	}
+	//NORTH
+	E = infomap[index][EAST];
+	if (E != -1)
+	{
+		N = infomap[E][NORTH];
+		if (N != -1)
+		{
+			W = infomap[N][WAST];
+			if (N != -1)
+			{
+				infomap[W][SOUTH] = index;
+				infomap[index][NORTH] = W;
+			}
+		}
+	}
+	W = infomap[index][WAST];
+	if (W != -1)
+	{
+		N = infomap[W][NORTH];
+		if (N != -1)
+		{
+			E = infomap[N][EAST];
+			if (E != -1)
+			{
+				infomap[E][SOUTH] = index;
+				infomap[index][NORTH] = E;
+			}
+		}
+	}
+}
+void creatminimap()
+{
+	memcpy(minimap, resetminimap, sizeof(resetminimap));
+	int index, stop = 1;
+	int mapNumber[MAPSIZE] = { 1 };
+	minimap[0][0] = 0, minimap[0][1] = 0;
+	if (infomap[0][EAST] != -1)
+		minimap[(infomap[0][EAST])][0]++, mapNumber[(infomap[0][EAST])] = 1, stop++;
+	if (infomap[0][WAST] != -1)
+		minimap[(infomap[0][WAST])][0]--, mapNumber[(infomap[0][WAST])] = 1, stop++;
+	if (infomap[0][SOUTH] != -1)
+		minimap[(infomap[0][SOUTH])][1]--, mapNumber[(infomap[0][SOUTH])] = 1, stop++;	
+	if (infomap[0][NORTH] != -1)
+		minimap[(infomap[0][NORTH])][1]++, mapNumber[(infomap[0][NORTH])] = 1, stop++;
 	while (1)
 	{
-		srand(rand());
-		posx = 2 + rand() % 28;
-		posy = 2 + rand() % 28;
-		char* p = map + posx * 32;
-		if (p[posy] == '0')
+		if (stop == MAPSIZE)
 		{
-			list_MON[*mob_num][0] = mappos;
-			list_MON[*mob_num][1] = posx;
-			list_MON[*mob_num][2] = posy;
-			p[posy] = MONSTER;
-			*mob_num+=1;
-			break;
+			return;
+		}
+		for (index = 1; index < MAPSIZE; index++)
+		{
+			if (!mapNumber[index])
+			{
+				int E = infomap[index][EAST];
+				int W = infomap[index][WAST];
+				int S = infomap[index][SOUTH];
+				int N = infomap[index][NORTH];
+				if (E != -1)
+				{
+					if (mapNumber[E])
+					{
+						memcpy(minimap[index], minimap[E], sizeof(minimap[index]));
+						minimap[index][0]--;
+						mapNumber[index] = 1;
+						stop++;
+						continue;
+					}
+				}
+				if (W != -1)
+				{
+					if (mapNumber[W])
+					{
+						memcpy(minimap[index], minimap[W], sizeof(minimap[index]));
+						minimap[index][0]++;
+						mapNumber[index] = 1;
+						stop++;
+						continue;
+					}
+				}
+				if (S != -1)
+				{
+					if (mapNumber[S])
+					{
+						memcpy(minimap[index], minimap[S], sizeof(minimap[index]));
+						minimap[index][1]++;
+						mapNumber[index] = 1;
+						stop++;
+						continue;
+					}
+				}
+				if (N != -1)
+				{
+					if (mapNumber[N])
+					{
+						memcpy(minimap[index], minimap[N], sizeof(minimap[index]));
+						minimap[index][1]--;
+						mapNumber[index] = 1;
+						stop++;
+						continue;
+					}
+				}
+			}
 		}
 	}
+	
+
 }
-
-void print_MONLIST(int list_MON[20][3])
-{
-	int a, b;
-	for (a = 0; a < 20; a++)
-	{
-		for (b = 0; b < 3; b++)
-		{
-			printf("%d ", list_MON[a][b]);
-		}
-		printf("\n");
-	}
-	Sleep(10000);
-}
-
-
 void randomObjectMaking(char object, char* map)
 {
 	int posx, posy;
@@ -415,10 +600,8 @@ void randomObjectMaking(char object, char* map)
 		posy = 2 + rand() % 28;
 		char* p = map + posx * 32;
 		if (p[posy] == '0')
-		{
 			p[posy] = object;
-			break;
-		}
+		break;
 	}
 }
 void drawMap(int pos)
@@ -458,10 +641,10 @@ void drawMap(int pos)
 				setColor(black, lightgreen);
 				printf("FF");
 			}
-			else if (temp == MONSTER)
+			else if (temp == NEXT)
 			{
-				setColor(white, red);
-				printf("MM");
+				setColor(lightpurple, black);
+				printf("▣");
 			}
 			else
 			{
@@ -470,30 +653,6 @@ void drawMap(int pos)
 			}
 		}
 		setColor(black, black);
-	}
-	setColor(red, red);
-	gotoxy(46, 34);
-	printf(" ");
-	setColor(green, green);
-	if (infomap[pos][EAST] != -1)
-	{
-		gotoxy(48, 34);
-		printf(" ");
-	}
-	if (infomap[pos][WAST] != -1)
-	{
-		gotoxy(44, 34);
-		printf(" ");
-	}
-	if (infomap[pos][SOUTH] != -1)
-	{
-		gotoxy(46, 36);
-		printf(" ");
-	}
-	if (infomap[pos][NORTH] != -1)
-	{
-		gotoxy(46, 32);
-		printf(" ");
 	}
 	setColor(white, black);
 	gotoxy(60, 0);
@@ -509,6 +668,47 @@ void drawMap(int pos)
 	printf("NORTH=%d ", infomap[pos][NORTH]);
 
 }
+void drawMiniMap(int pos)
+{
+	setColor(yellow, yellow);
+	gotoxy(80, 20);
+	printf("  ");
+	for (int index = 1; index < MAPSIZE; index++)
+	{
+		if (infomap[index][DOOROPEN] == 1)
+		{
+			setColor(black, lightpurple);
+			gotoxy(80 + 4 * minimap[index][0], 20 - 2 * minimap[index][1]);
+			printf("▣");
+		}
+		else
+		{
+			setColor(green, green);
+			gotoxy(80 + 4 * minimap[index][0], 20 - 2 * minimap[index][1]);
+			printf("  ");
+		}
+	}
+	if (pos == 0)
+	{
+		setColor(cyan, yellow);
+		gotoxy(80, 20);
+		printf("●");
+	}
+	else if (infomap[pos][DOOROPEN] == 1)
+	{
+		setColor(black, lightpurple);
+		gotoxy(80 + 4 * minimap[pos][0], 20 - 2 * minimap[pos][1]);
+		printf("●");
+	}
+	else
+	{
+		setColor(cyan, red);
+		gotoxy(80 + 4 * minimap[pos][0], 20 - 2 * minimap[pos][1]);
+		printf("●");
+	}
+	setColor(white, black);
+
+}
 int mobile(char object)
 {
 	switch (object)
@@ -518,7 +718,6 @@ int mobile(char object)
 	case PLAYER:
 	case FOOD:
 	case WATER:
-	case MONSTER:
 		return 0;
 	case '*':
 		return 2;
@@ -532,7 +731,7 @@ int move(int moveObject, int mappos, int x, int y)
 	printf("%d, %d", pX, pY);
 	char object = maps[mappos][pX + x][pY + y];
 	int t = mobile(object);
-	if (t == 1) 
+	if (t == 1)
 	{
 		//maps[mappos][pX + x][pY + y] == object;
 		maps[mappos][pX][pY] = '0';
@@ -604,49 +803,10 @@ int move(int moveObject, int mappos, int x, int y)
 		{
 			maps[newmappos][pX][pY] = PLAYER;
 			drawMap(newmappos);
+			drawMiniMap(newmappos);
 			return newmappos;
 		}
 	}
 	return mappos;
 
 }
-
-/*void monster_move(int moveObject, int mappos)
-{
-	gotoxy(15, 15);
-	int x = rand() % 3 - 3;
-	int y = rand() % 3 - 3;
-	char object = maps[mappos][mX + x][mY + y];
-
-	int t = mobile(object);
-	if (t == 3) //몬스터도 플레이어 느낌으로 봐야 쉽지 않을까.?
-	{
-		//maps[mappos][pX + x][pY + y] == object;
-		maps[mappos][mX][mY] = '0';
-		setColor(white, black);
-		gotoxy(2 * mX, mY);
-		printf("  ");
-
-		setColor(red, black);
-		gotoxy(2 * (mX + x), mY + y);
-		printf("MM");
-		mX += x;
-		mY += y;
-	}
-}
-
-void randomObjectMaking(char object, char* map)
-{
-	int posx, posy;
-	while (1)
-	{
-		srand(rand());
-		posx = 2 + rand() % 28;
-		posy = 2 + rand() % 28;
-		char* p = map + posx * 32;
-		if (p[posy] == '0')
-			p[posy] = object;
-		break;
-	}
-}
-*/
