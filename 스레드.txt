@@ -1,0 +1,24 @@
+#include <stdio.h>
+#include <windows.h>
+#include <process.h>
+#include <time.h>
+unsigned _stdcall Thread_ABC(void* arg)
+{
+	while (1)
+	{
+		int *b = (int *)arg;
+		printf("%d",*b);
+		Sleep(1000);
+	}
+}
+int main()
+{
+	int a=1;
+	_beginthreadex(NULL, 0, Thread_ABC, (void *)&a, 0, NULL);
+	while (1)
+	{
+		printf("B");
+		Sleep(2000);
+	}
+	return 0;
+}
